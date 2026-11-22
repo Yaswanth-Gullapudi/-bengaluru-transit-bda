@@ -1,0 +1,46 @@
+{
+  "test_weekdays": [
+    "2025-09-22",
+    "2025-09-23",
+    "2025-09-24",
+    "2025-09-25",
+    "2025-09-26",
+    "2025-09-29",
+    "2025-09-30"
+  ],
+  "benchmark_riders_per_bus_trip_busy_peak": 12.266954061199247,
+  "gap_rule": "forecast >= 1000 entries/h and riders per bus trip >= 2x benchmark",
+  "feeder_assumptions": {
+    "bus_access_share": [
+      0.1,
+      0.2
+    ],
+    "metro_riders_per_feeder_trip": 50
+  },
+  "gap_station_hours": 39,
+  "gap_stations": 11,
+  "feeder_trips_per_weekday_gap_hours_10pct": 173,
+  "feeder_trips_per_weekday_gap_hours_20pct": 319,
+  "crowded_station_hours_forecast": 73,
+  "top20_overlap_forecast_vs_actual": 19,
+  "spearman_forecast_vs_actual_riders_per_bus": 0.9968337208727057,
+  "stations_with_no_bus_within_400m": [],
+  "stations_without_bus_data": [
+    "Beratena Agrahara",
+    "Hongasandra",
+    "Seetharampalya"
+  ],
+  "yellow_base_weekday_entries_after_cut": 52626.018,
+  "yellow_avg_fare_rs": 51.42373780430047,
+  "verdict_rule": {
+    "More buses": "riders per bus trip >= 2x benchmark",
+    "More trains": "forecast > 1637 entries/h"
+  },
+  "verdict_counts_busy_station_hours": {
+    "More buses and trains": 19,
+    "More buses": 20,
+    "More trains": 54,
+    "OK": 111
+  },
+  "busy_station_hours": 204
+}

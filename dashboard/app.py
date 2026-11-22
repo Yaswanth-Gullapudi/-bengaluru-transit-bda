@@ -114,10 +114,54 @@ def line_of(lines: str) -> str:
             "GREEN+YELLOW": "Interchange (RV Road)"}.get(lines, lines)
 
 
+def _line_order(d: pd.DataFrame) -> pd.DataFrame:
+    """Order a line's stations along its main direction (first principal axis of lon/lat), so they can be joined."""
+    xy = d[["lon", "lat"]].to_numpy(float)
+    if len(xy) < 3:
+        return d
+    c = xy - xy.mean(axis=0)
+    axis = np.linalg.svd(c, full_matrices=False)[2][0]
+    return d.iloc[np.argsort(c @ axis)]
+
+
+def station_map(df: pd.DataFrame, color: str = "line", size: str | None = None, hover: dict | None = None,
+                highlight: str | None = None, height: int = 480, title: str = "", join_lines: bool = True) -> go.Figure:
+    """Station map drawn as an ordinary SVG chart (stations at their real positions, lines joined in their colours).
+    It needs no map tiles and no WebGL, so it renders in every browser, offline, in screenshots and on Streamlit Cloud."""
+    d = df.copy()
+    fig = go.Figure()
+    if join_lines:
+        for ln, g in d.groupby(color):
+            if ln in LINE_COLORS and len(g) > 1 and not str(ln).startswith("Interchange"):
+                g = _line_order(g)
+                fig.add_trace(go.Scatter(x=g["lon"], y=g["lat"], mode="lines", line=dict(color=LINE_COLORS[ln], width=3),
+                                         opacity=0.45, hoverinfo="skip", showlegend=False))
+    for ln, g in d.groupby(color):
+        sz = (8 + 22 * (g[size] - d[size].min()) / max(d[size].max() - d[size].min(), 1e-9)) if size else 11
+        cd = g[list(hover)] if hover else None
+        ht = "<b>%{text}</b>" + "".join(f"<br>{lab}: %{{customdata[{i}]:,.0f}}" for i, lab in enumerate((hover or {}).values())) + "<extra></extra>"
+        fig.add_trace(go.Scatter(x=g["lon"], y=g["lat"], mode="markers", name=str(ln), text=g["n"], customdata=cd,
+                                 hovertemplate=ht, marker=dict(size=sz, color=LINE_COLORS.get(ln, P["accent"]),
+                                                               line=dict(color=P["surface"], width=1))))
+    if highlight is not None and (d["n"] == highlight).any():
+        h = d[d["n"] == highlight]
+        fig.add_trace(go.Scatter(x=h["lon"], y=h["lat"], mode="markers+text", text=[highlight], textposition="top center",
+                                 marker=dict(size=26, color="rgba(0,0,0,0)", line=dict(color=P["ink"], width=2.5)),
+                                 textfont=dict(color=P["ink"], size=13), hoverinfo="skip", showlegend=False))
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False, scaleanchor="x", scaleratio=1.026)   # 1/cos(13°): equal km in both directions
+    fig.update_layout(height=height, title=title, legend=dict(orientation="h", y=-0.02, title=""),
+                      margin=dict(l=10, r=10, t=50 if title else 10, b=10))
+    return fig
+
+
 PAGES = ["Overview", "How it works", "Line explorer", "Network analytics", "Station explorer", "Yellow Line test", "Headway",
-         "All lines", "Machine learning", "Demand forecaster", "Fare revenue", "Spark scaling", "Pink Line", "Data & reproducibility"]
+         "All lines", "Machine learning", "Demand forecaster", "Supply gap & fixes", "Fare revenue", "Spark scaling", "Pink Line", "Data & reproducibility"]
 st.sidebar.markdown("<div class=\"hero\"><div class=\"eyebrow\">BDA project</div><h1 style=\"font-size:1.4rem\">Bengaluru Transit</h1></div>", unsafe_allow_html=True)
 st.sidebar.caption("BMRCL metro + BMTC bus · HDFS + Spark 4 on Kaggle")
+_qp = st.query_params.get("page")                      # deep links: ?page=Fare%20revenue
+if _qp in PAGES and "page" not in st.session_state:
+    st.session_state["page"] = _qp
 page = st.sidebar.radio("Page", PAGES, key="page")
 st.sidebar.markdown("---")
 st.sidebar.caption("Light or dark: menu (top right) > Settings > Theme. The charts and cards follow it.")
@@ -129,7 +173,7 @@ if page == "Overview":
          "A Big Data pipeline joining BMRCL metro ridership, 26 BMTC bus-network snapshots, the OpenStreetMap walking "
          "network and booth-level population, used to test a dated natural experiment: the Yellow Line opening on 11 Aug 2025. "
          "Every number on these pages is read from the pipeline's output files.",
-         eyebrow="BDA project · Team 15 · Overview", meta="Data: Aug-Sep 2025 metro RTI · 26 GTFS snapshots 2024-2026 · 13 Kaggle notebooks")
+         eyebrow="BDA project · Team 15 · Overview", meta="Data: Aug-Sep 2025 metro RTI · 26 GTFS snapshots 2024-2026 · 14 Kaggle notebooks")
     me = tab("02", "main_diversion_estimates.csv")
     hw = tab("03", "headway_did.csv")
     sc = tab("06", "scaling_results.csv")
@@ -268,8 +312,8 @@ elif page == "Line explorer":
         st.info("The Pink Line opened on 14 Nov 2026. No ridership has been released for it yet, so this page shows its "
                 "stations and the pre-registered bus-link test. Its ridership test runs once Nov-Dec 2026 data is obtained by RTI.")
         pk = pd.DataFrame(D["pink"])
-        st.plotly_chart(px.scatter_map(pk, lat="lat", lon="lon", hover_name="n", zoom=11.5, height=380, map_style=MAP_STYLE,
-                                       color_discrete_sequence=[LINE_COLORS["Pink"]]), width="stretch")
+        st.plotly_chart(station_map(pk.assign(line="Pink"), height=420, title="Pink Line stations (opened 14 Nov 2026)"),
+                        width="stretch")
         ps = tab("10", "pink_station_scores.csv")
         st.subheader("Existing stations with the strongest bus links to the Pink corridor")
         st.dataframe(ps.sort_values("PinkLink", ascending=False).head(15)[["station", "lines", "BusTrips", "PinkLink", "PinkLinkTrips", "MetroHopsToJayadeva"]].round(3),
@@ -290,9 +334,11 @@ elif page == "Line explorer":
             c[2].metric("Opened", "11 Aug 2025")
         c[3].metric("Mean bus trips within 400 m", f"{L_['bus_trips'].mean():,.0f}")
         c[4].metric("Mean feeder trips", f"{L_['feeder_trips'].mean():,.0f}")
-        st.plotly_chart(px.scatter_map(L_, lat="lat", lon="lon", size=np.sqrt(L_["sep"].clip(lower=300)), hover_name="n",
-                                       color_discrete_sequence=[LINE_COLORS[line]], zoom=10.5, height=420, map_style=MAP_STYLE,
-                                       hover_data={"sep": ":,.0f", "bus_trips": ":,.0f", "feeder_trips": ":,.0f"}), width="stretch")
+        L_["sz"] = np.sqrt(L_["sep"].clip(lower=300))
+        st.plotly_chart(station_map(L_.assign(line=line), size="sz", height=440,
+                                    hover={"sep": "weekday entries (Sep)", "bus_trips": "bus trips within 400 m",
+                                           "feeder_trips": "feeder trips"},
+                                    title=f"{line} Line stations (bubble size = September weekday entries)"), width="stretch")
         c1, c2 = st.columns(2)
         top = L_.sort_values("sep", ascending=False).head(15).iloc[::-1]
         c1.plotly_chart(px.bar(top, x="sep", y="n", orientation="h", color_discrete_sequence=[LINE_COLORS[line]],
@@ -374,10 +420,10 @@ elif page == "Station explorer":
     pk = pd.DataFrame(D["pink"]).assign(line="Pink", n=lambda d: d["n"] + " (Pink, new)")
     mp = pd.concat([S[["n", "lat", "lon", "line", "sep"]], pk[["n", "lat", "lon", "line"]].assign(sep=500)])
     mp["size"] = np.sqrt(mp["sep"].clip(lower=500))
-    fig = px.scatter_map(mp, lat="lat", lon="lon", color="line", size="size", hover_name="n", zoom=10.3,
-                         color_discrete_map=LINE_COLORS, map_style=MAP_STYLE, height=520)
-    st.plotly_chart(fig, width="stretch")
     name = st.selectbox("Station", sorted(S["n"]), index=sorted(S["n"]).index("Banashankari"), key="stn")
+    st.plotly_chart(station_map(mp, size="size", highlight=name, height=560, hover={"sep": "weekday entries (Sep)"},
+                                title="All metro stations (bubble size = September weekday entries; ring = selected station)"),
+                    width="stretch")
     s = next(x for x in D["stations"] if x["n"] == name)
     c = st.columns(5)
     c[0].metric("Bus trips within 400 m", f"{s.get('bt4', s['bt']):,}")
@@ -543,6 +589,100 @@ elif page == "Demand forecaster":
     c1.plotly_chart(px.line(prof, x="hour", y="share", color="type", title="Average share of daily entries by hour"), width="stretch")
     c2.plotly_chart(px.bar(sil, x="k", y="silhouette", title="Silhouette by number of groups"), width="stretch")
     st.dataframe(cl[["station", "cluster_name", "am_share", "pm_share"]].round(3), hide_index=True, width="stretch")
+
+# ============================================================================ Fare revenue
+elif page == "Supply gap & fixes":
+    hero("Where riders are many but buses are few, and what fixes it",
+         "The forecaster predicts metro entries for every station and hour; the BMTC timetable gives the bus trips stopping within "
+         "400 m in that hour. Busy hours with far fewer buses per metro rider than usual are bus gaps. Two fixes are sized: "
+         "dedicated feeder buses, and more Yellow Line trains using the measured frequency elasticity.",
+         eyebrow="Supply gap · notebook 13 (local, from the outputs of notebooks 10-12)",
+         meta="Forecast weekdays 22-30 Sep 2025 · GTFS 4 Aug 2025 · gap = forecast ≥ 1,000 entries/h and ≥ 2× the typical busy-hour riders per bus trip")
+    gs = json.loads((EXT / "tables" / "supply_gap_summary.json").read_text())
+    allh = pd.read_csv(EXT / "tables" / "supply_gap_station_hours.csv")
+    gl = pd.read_csv(EXT / "tables" / "supply_gap_list.csv")
+    bench = gs["benchmark_riders_per_bus_trip_busy_peak"]
+    c = st.columns(4)
+    c[0].metric("Gap station-hours", f"{gs['gap_station_hours']}", f"{gs['gap_stations']} stations", delta_color="off")
+    c[1].metric("Typical busy hour", f"{bench:.1f} riders per bus trip")
+    c[2].metric("Forecast finds the real gaps", f"{gs['top20_overlap_forecast_vs_actual']} of top 20",
+                f"rank corr. {gs['spearman_forecast_vs_actual_riders_per_bus']:.3f}", delta_color="off")
+    c[3].metric("Crowding warnings (> 1,637/h)", f"{gs['crowded_station_hours_forecast']} station-hours")
+
+    st.subheader("Verdict: does each busy station-hour need more buses, more trains, or both?")
+    st.caption("More buses = at least twice the typical busy-hour metro riders per bus trip within 400 m. "
+               "More trains = crowding warning, forecast above 1,637 entries an hour (busiest 5% of station-hours). "
+               "Busy = at least 1,000 forecast entries an hour on the test weekdays.")
+    vc = gs.get("verdict_counts_busy_station_hours", {})
+    VCOL = {"More buses and trains": "#762A83", "More buses": "#E08214", "More trains": "#2166AC", "OK": "#BDBDBD"}
+    c = st.columns(4)
+    for i, k in enumerate(VCOL):
+        c[i].metric(k, f"{vc.get(k, 0)} station-hours")
+    vfilter = st.multiselect("Show", list(VCOL)[:3], default=list(VCOL)[:3], key="verdict_pick")
+    need = allh[allh["verdict"].isin(vfilter)]
+    if len(need):
+        hm = allh[allh["station"].isin(need["station"].unique())].copy()
+        hm["hour"] = hm["hour"].astype(int)
+        fig = px.scatter(hm, x="hour", y="station", color="verdict", color_discrete_map=VCOL, symbol_sequence=["square"],
+                         hover_data={"forecast_entries": ":.0f", "bus_trips": True, "riders_per_bus_forecast": ":.1f"},
+                         category_orders={"verdict": list(VCOL)}, title="What each busy station-hour needs")
+        fig.update_traces(marker=dict(size=16, line=dict(width=0)))
+        fig.update_layout(height=max(380, 26 * hm["station"].nunique() + 140), xaxis=dict(dtick=1, title="hour of day"),
+                          yaxis=dict(title="", categoryorder="total ascending"), legend=dict(orientation="h", y=-0.12, title=""))
+        st.plotly_chart(fig, width="stretch")
+    vt = pd.read_csv(EXT / "tables" / "supply_verdict_stations.csv")
+    st.dataframe(vt[vt["verdict"].isin(vfilter)].rename(columns={"hours": "hours of day"}), hide_index=True, width="stretch")
+
+    st.subheader("1 · Gap finder")
+    top = allh.sort_values("riders_per_bus_forecast", ascending=False).head(15).iloc[::-1]
+    top["label"] = top["station"] + " " + top["hour"].astype(int).map("{:02d}:00".format)
+    fig = px.bar(top, x=top["riders_per_bus_forecast"].clip(upper=150), y="label", orientation="h",
+                 hover_data={"forecast_entries": ":.0f", "actual_entries": ":.0f", "bus_trips": True},
+                 labels={"x": "forecast metro entries per bus trip within 400 m", "label": ""},
+                 title="Biggest bus gaps (bars above 150 are cut off; Kengeri has 0-1 bus trips per hour)")
+    fig.add_vline(x=bench, line_dash="dash", annotation_text=f"typical busy hour {bench:.0f}")
+    st.plotly_chart(fig, width="stretch")
+    stn = st.selectbox("Station: forecast demand against bus trips by hour", sorted(gl["station"].unique()), key="gap_stn")
+    one = allh[allh["station"] == stn].sort_values("hour")
+    fig = go.Figure()
+    fig.add_bar(x=one["hour"], y=one["bus_trips"], name="bus trips within 400 m", yaxis="y2", opacity=0.45)
+    fig.add_scatter(x=one["hour"], y=one["forecast_entries"], name="forecast metro entries", mode="lines+markers")
+    fig.update_layout(title=f"{stn}: forecast entries vs buses (hours with ≥ 1,000 forecast entries)",
+                      yaxis=dict(title="metro entries per hour"),
+                      yaxis2=dict(title="bus trips per hour", overlaying="y", side="right", showgrid=False),
+                      xaxis=dict(title="hour of day", dtick=1), legend=dict(orientation="h", y=-0.2))
+    st.plotly_chart(fig, width="stretch")
+
+    st.subheader("2 · Bus fix: size a feeder service")
+    st.caption("We have bus timetables, not bus ridership, so this is a planning scenario: choose what share of metro riders "
+               "would arrive by bus and how many of them one feeder trip carries.")
+    a, b = st.columns(2)
+    share = a.slider("Share of metro riders arriving by bus", 0.05, 0.40, 0.10, 0.05, format="%.2f", key="gap_share")
+    load = b.slider("Metro riders per feeder trip", 30, 80, 50, 5, key="gap_load")
+    g = gl.copy()
+    g["feeder trips / h"] = np.ceil(share * g["forecast_entries"] / load).astype(int)
+    g["feeder every (min)"] = (60 / g["feeder trips / h"]).round(1)
+    st.metric("Feeder trips needed per weekday in the gap hours", f"{int(g['feeder trips / h'].sum()):,}",
+              f"{g['station'].nunique()} stations", delta_color="off")
+    show = g[["station", "line", "hour", "forecast_entries", "bus_trips", "riders_per_bus_forecast", "feeder trips / h",
+              "feeder every (min)", "current_feeder_trips_per_day", "crowding_warning"]].rename(columns={
+        "forecast_entries": "forecast entries/h", "bus_trips": "bus trips/h", "riders_per_bus_forecast": "riders per bus trip",
+        "current_feeder_trips_per_day": "MF feeder trips/day now", "crowding_warning": "crowding warning"})
+    st.dataframe(show.round(1), hide_index=True, width="stretch")
+
+    st.subheader("3 · Train fix: more Yellow Line trains")
+    tr = pd.read_csv(EXT / "tables" / "train_headway_scenarios.csv")
+    h = st.slider("Yellow Line headway (minutes); now 19", 6, 19, 12, key="gap_hw")
+    base, fare = gs["yellow_base_weekday_entries_after_cut"], gs["yellow_avg_fare_rs"]
+    lo, hi = (19 / h) ** 0.21 - 1, (19 / h) ** 0.30 - 1
+    c = st.columns(3)
+    c[0].metric("Trains per hour", f"{60 / h:.1f}", f"+{60 / h - 60 / 19:.1f} vs now", delta_color="off")
+    c[1].metric("Extra weekday entries", f"{base * lo:,.0f} – {base * hi:,.0f}", f"+{lo:.1%} to +{hi:.1%}", delta_color="off")
+    c[2].metric("Extra fare revenue per year", f"₹{base * lo * fare * 250 / 1e7:.1f} – {base * hi * fare * 250 / 1e7:.1f} crore")
+    st.dataframe(tr.round(1), hide_index=True, width="stretch")
+    st.caption("Elasticity 0.21 (synthetic control) to 0.30 (difference-in-differences), measured on the 25 → 19 min cut. "
+               "Headways below 19 min are outside the measured range, so treat them as extrapolation. More trains also add "
+               "platform capacity at stations with crowding warnings; we have no headway data for the Purple and Green lines.")
 
 # ============================================================================ Fare revenue
 elif page == "Fare revenue":

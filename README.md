@@ -3,7 +3,7 @@
 **Team 15** · Gullapudi Yaswanth · Madhurashree M · Mahadhii Ganapathi Subramanian
 **Guide:** Ms. Sangita Khare
 
-**Live dashboard:** https://bengaluru-transit-bda.streamlit.app/ (14 pages, no install)
+**Live dashboard:** https://bengaluru-transit-bda.streamlit.app/ (15 pages, no install)
 
 A Big Data pipeline (Hadoop HDFS + Apache Spark 4 on Kaggle) that joins BMRCL metro ridership with 26 BMTC bus-network
 snapshots, the OpenStreetMap walking network and polling-booth population. It describes the whole network and tests a
@@ -66,7 +66,7 @@ dated natural experiment: did BMTC bus links push metro riders onto the new Yell
                                        v
 +------------------------------------------------------------------------------+
 |                         INTERACTIVE VISUALISATION LAYER                      |
-|  dashboard/app.py: Streamlit + Plotly, 14 pages, light and dark              |
+|  dashboard/app.py: Streamlit + Plotly, 15 pages, light and dark              |
 |  demo/yellow_line_explorer.html: single-page web demo                        |
 +------------------------------------------------------------------------------+
 ```
@@ -112,6 +112,11 @@ All figures come from the Kaggle runs in `results/`.
 10. **Network facts.** 4,130 routes and 9,309 stops; Majestic is served by 1,019 routes; only 5% of bus stops are within
     400 m of a metro station; weekday bus trips grew 42% from Jan 2024 to Nov 2026; scheduled bus speed is 15.8 km/h.
 11. **Spark scaling.** On 38.6 M rows Spark with 4 cores took 22.5 s vs 50.3 s for pandas (2.2x); on one snapshot pandas was faster.
+12. **More buses or more trains?** Forecast demand vs bus trips within 400 m, for every busy station-hour (1,000+ forecast entries):
+    111 are fine, 54 need more trains (crowding warning: Majestic, Benniganahalli, Cubbon Park...), 20 need more buses
+    (at least twice the usual 12.3 riders per bus trip: Chickpete, Kengeri, Jayanagar...) and 19 need both (MG Road, Trinity,
+    Indiranagar in the evening peak). A feeder every 7.5-20 min covers the worst bus gaps (planning estimate: 10-20% of riders
+    by bus, 50 per feeder trip); a 12-min Yellow headway would add 5,300-7,800 riders a weekday (measured elasticity 0.21-0.30).
 
 ## Fare revenue and economic effect
 
@@ -145,8 +150,8 @@ streamlit run dashboard/app.py
 
 It opens at http://localhost:8501. On Windows you can instead double-click **`run_dashboard.bat`**.
 
-14 pages: Overview, How it works, Line explorer (Purple, Green, Yellow, Pink), Network analytics, Station explorer,
-Yellow Line test, Headway calculator, All lines, Machine learning, Demand forecaster, Fare revenue, Spark scaling,
+15 pages: Overview, How it works, Line explorer (Purple, Green, Yellow, Pink), Network analytics, Station explorer,
+Yellow Line test, Headway calculator, All lines, Machine learning, Demand forecaster, Supply gap & fixes, Fare revenue, Spark scaling,
 Pink Line, Data & reproducibility. Light or dark: menu (top right) > Settings > Theme.
 The dashboard only reads the result files in `results/` and `extensions/`; it does not need Spark or the raw data.
 
@@ -185,6 +190,7 @@ works too, except the forecaster panel, which loads `forecast.json`.
 | 10 | Extensions and all lines: Pink pre-registration, heterogeneity, second shock, integration index, new-station ML | Spark MLlib, pyfixest | fig 18 |
 | 11 | Next-day demand forecaster (V1-V3), ranges, crowding warnings, anomalies, KMeans station types | Spark MLlib | fig 19 |
 | 12 | Fare revenue before/after the opening, by line, from the headway cut | pandas | fig 20 |
+| 13 | Supply gap (runs locally on the outputs of 10-12): busy hours with too few buses, feeder and train fixes, verdict per station-hour | pandas | figs 21-22 (`extensions/outputs`) |
 
 ## 4. Re-run the pipeline on Kaggle (free)
 

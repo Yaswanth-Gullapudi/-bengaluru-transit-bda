@@ -1,0 +1,12 @@
+station,line,gap_hours,worst_hour,peak_forecast_entries,feeder_trips_gap_hours_10pct,feeder_trips_gap_hours_20pct,current_feeder_trips_per_day
+Indiranagar,Purple,8,18,3598.405130714906,39,73,310.0
+Chickpete,Green,7,18,1526.3413109468438,22,40,0.0
+Mahatma Gandhi Road,Purple,5,19,3699.5863196901532,28,52,0.0
+Trinity,Purple,4,18,3532.942210831596,22,40,0.0
+Jayanagar,Green,3,16,1583.2765941175803,11,20,78.0
+Sri Sathya Sai Hospital,Purple,3,18,2229.488886048447,14,26,114.0
+Garudacharpalya,Purple,3,18,1632.0264093452838,10,17,2.0
+Kengeri,Purple,2,9,1042.2515764492632,6,10,0.0
+Baiyappanahalli,Purple,2,9,2881.6333118094167,11,22,36.0
+"Dr. B. R. Ambedkar Station, Vidhana Soudha",Purple,1,18,2504.726809430415,6,11,0.0
+Nallurahalli,Purple,1,18,1842.8762035922448,4,8,114.0
