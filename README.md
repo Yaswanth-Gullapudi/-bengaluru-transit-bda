@@ -3,6 +3,8 @@
 **Team 15** · Gullapudi Yaswanth · Madhurashree M · Mahadhii Ganapathi Subramanian
 **Guide:** Ms. Sangita Khare
 
+**Live dashboard:** https://bengaluru-transit-bda.streamlit.app/ (14 pages, no install)
+
 A Big Data pipeline (Hadoop HDFS + Apache Spark 4 on Kaggle) that joins BMRCL metro ridership with 26 BMTC bus-network
 snapshots, the OpenStreetMap walking network and polling-booth population. It describes the whole network and tests a
 dated natural experiment: did BMTC bus links push metro riders onto the new Yellow Line (opened 11 Aug 2025)?
@@ -128,7 +130,9 @@ From BMRCL's own fare and revenue fields (notebook 12), weekday averages:
 
 ---
 
-## 1. Run the interactive dashboard (5 minutes)
+## 1. Run the interactive dashboard
+
+Open the live version at **https://bengaluru-transit-bda.streamlit.app/**, or run it on your own PC (5 minutes):
 
 Needs Python 3.10 or newer.
 
