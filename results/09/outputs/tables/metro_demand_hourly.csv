@@ -1,0 +1,145 @@
+period,daytype,hour,avg_entries
+1-10 Aug (before Yellow),weekday,0,16.333333333333332
+1-10 Aug (before Yellow),weekday,1,0.0
+1-10 Aug (before Yellow),weekday,2,0.0
+1-10 Aug (before Yellow),weekday,3,15.333333333333334
+1-10 Aug (before Yellow),weekday,4,930.3333333333334
+1-10 Aug (before Yellow),weekday,5,4723.666666666667
+1-10 Aug (before Yellow),weekday,6,10944.666666666666
+1-10 Aug (before Yellow),weekday,7,29535.833333333332
+1-10 Aug (before Yellow),weekday,8,58811.666666666664
+1-10 Aug (before Yellow),weekday,9,71096.5
+1-10 Aug (before Yellow),weekday,10,48062.5
+1-10 Aug (before Yellow),weekday,11,31566.166666666668
+1-10 Aug (before Yellow),weekday,12,28703.0
+1-10 Aug (before Yellow),weekday,13,30314.5
+1-10 Aug (before Yellow),weekday,14,29613.333333333332
+1-10 Aug (before Yellow),weekday,15,33456.333333333336
+1-10 Aug (before Yellow),weekday,16,45268.166666666664
+1-10 Aug (before Yellow),weekday,17,58635.0
+1-10 Aug (before Yellow),weekday,18,69025.0
+1-10 Aug (before Yellow),weekday,19,56016.0
+1-10 Aug (before Yellow),weekday,20,35144.0
+1-10 Aug (before Yellow),weekday,21,21667.666666666668
+1-10 Aug (before Yellow),weekday,22,11522.166666666666
+1-10 Aug (before Yellow),weekday,23,1472.3333333333333
+1-10 Aug (before Yellow),weekend,0,7.25
+1-10 Aug (before Yellow),weekend,1,0.0
+1-10 Aug (before Yellow),weekend,2,0.0
+1-10 Aug (before Yellow),weekend,3,0.0
+1-10 Aug (before Yellow),weekend,4,338.25
+1-10 Aug (before Yellow),weekend,5,2249.25
+1-10 Aug (before Yellow),weekend,6,6185.25
+1-10 Aug (before Yellow),weekend,7,16933.0
+1-10 Aug (before Yellow),weekend,8,23826.25
+1-10 Aug (before Yellow),weekend,9,30488.25
+1-10 Aug (before Yellow),weekend,10,31265.5
+1-10 Aug (before Yellow),weekend,11,33886.75
+1-10 Aug (before Yellow),weekend,12,37659.5
+1-10 Aug (before Yellow),weekend,13,38575.75
+1-10 Aug (before Yellow),weekend,14,37236.5
+1-10 Aug (before Yellow),weekend,15,38532.5
+1-10 Aug (before Yellow),weekend,16,41068.0
+1-10 Aug (before Yellow),weekend,17,45445.75
+1-10 Aug (before Yellow),weekend,18,46088.25
+1-10 Aug (before Yellow),weekend,19,40439.0
+1-10 Aug (before Yellow),weekend,20,32581.0
+1-10 Aug (before Yellow),weekend,21,24262.75
+1-10 Aug (before Yellow),weekend,22,14750.25
+1-10 Aug (before Yellow),weekend,23,2111.5
+11-18 Aug (after),weekday,0,14.5
+11-18 Aug (after),weekday,1,0.0
+11-18 Aug (after),weekday,2,0.0
+11-18 Aug (after),weekday,3,21.333333333333332
+11-18 Aug (after),weekday,4,1488.1666666666667
+11-18 Aug (after),weekday,5,6153.166666666667
+11-18 Aug (after),weekday,6,13708.5
+11-18 Aug (after),weekday,7,32313.833333333332
+11-18 Aug (after),weekday,8,62440.166666666664
+11-18 Aug (after),weekday,9,74246.66666666667
+11-18 Aug (after),weekday,10,53777.5
+11-18 Aug (after),weekday,11,40331.0
+11-18 Aug (after),weekday,12,37828.833333333336
+11-18 Aug (after),weekday,13,38435.5
+11-18 Aug (after),weekday,14,38582.0
+11-18 Aug (after),weekday,15,40034.666666666664
+11-18 Aug (after),weekday,16,51512.166666666664
+11-18 Aug (after),weekday,17,63862.5
+11-18 Aug (after),weekday,18,75820.33333333333
+11-18 Aug (after),weekday,19,64819.166666666664
+11-18 Aug (after),weekday,20,41696.333333333336
+11-18 Aug (after),weekday,21,26203.166666666668
+11-18 Aug (after),weekday,22,13479.0
+11-18 Aug (after),weekday,23,1865.0
+11-18 Aug (after),weekend,0,11.5
+11-18 Aug (after),weekend,1,0.0
+11-18 Aug (after),weekend,2,0.0
+11-18 Aug (after),weekend,3,0.0
+11-18 Aug (after),weekend,4,329.0
+11-18 Aug (after),weekend,5,2352.0
+11-18 Aug (after),weekend,6,6299.5
+11-18 Aug (after),weekend,7,16537.0
+11-18 Aug (after),weekend,8,25037.0
+11-18 Aug (after),weekend,9,33378.0
+11-18 Aug (after),weekend,10,36057.5
+11-18 Aug (after),weekend,11,39605.5
+11-18 Aug (after),weekend,12,42903.5
+11-18 Aug (after),weekend,13,42899.5
+11-18 Aug (after),weekend,14,43053.0
+11-18 Aug (after),weekend,15,43964.5
+11-18 Aug (after),weekend,16,46213.0
+11-18 Aug (after),weekend,17,50563.5
+11-18 Aug (after),weekend,18,49530.5
+11-18 Aug (after),weekend,19,44254.5
+11-18 Aug (after),weekend,20,35885.5
+11-18 Aug (after),weekend,21,26760.0
+11-18 Aug (after),weekend,22,16832.5
+11-18 Aug (after),weekend,23,2455.5
+September,weekday,0,14.545454545454545
+September,weekday,1,0.0
+September,weekday,2,0.0
+September,weekday,3,18.545454545454547
+September,weekday,4,1190.409090909091
+September,weekday,5,5209.636363636364
+September,weekday,6,13168.40909090909
+September,weekday,7,36315.181818181816
+September,weekday,8,69726.31818181818
+September,weekday,9,80263.90909090909
+September,weekday,10,53629.818181818184
+September,weekday,11,35576.22727272727
+September,weekday,12,32042.363636363636
+September,weekday,13,33498.13636363636
+September,weekday,14,32936.5
+September,weekday,15,37124.045454545456
+September,weekday,16,50731.954545454544
+September,weekday,17,66019.86363636363
+September,weekday,18,79899.90909090909
+September,weekday,19,64011.681818181816
+September,weekday,20,39859.454545454544
+September,weekday,21,23718.909090909092
+September,weekday,22,12334.954545454546
+September,weekday,23,1610.2727272727273
+September,weekend,0,13.625
+September,weekend,1,0.0
+September,weekend,2,0.0
+September,weekend,3,0.0
+September,weekend,4,345.25
+September,weekend,5,2624.5
+September,weekend,6,7525.375
+September,weekend,7,19907.25
+September,weekend,8,28379.75
+September,weekend,9,34817.125
+September,weekend,10,35666.75
+September,weekend,11,37782.875
+September,weekend,12,40003.125
+September,weekend,13,41245.375
+September,weekend,14,41317.75
+September,weekend,15,41304.125
+September,weekend,16,44955.75
+September,weekend,17,49994.0
+September,weekend,18,52475.0
+September,weekend,19,44680.375
+September,weekend,20,35380.0
+September,weekend,21,24973.125
+September,weekend,22,15143.25
+September,weekend,23,2146.625

@@ -1,0 +1,9 @@
+format,task,seconds_median
+CSV,count rows,0.5704376559999673
+CSV,trips per stop (group by),1.1792152960000521
+CSV,read one column,1.1084436950000054
+CSV,size on disk (MB),47.241105
+Parquet,count rows,0.17309263999993618
+Parquet,trips per stop (group by),0.3768477720000192
+Parquet,read one column,0.29032270200002586
+Parquet,size on disk (MB),11.236708

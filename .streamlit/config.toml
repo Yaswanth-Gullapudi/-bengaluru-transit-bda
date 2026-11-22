@@ -1,0 +1,28 @@
+# Light and dark palettes (same values as the reference atlas). Viewers switch with the menu: Settings > Theme.
+[theme]
+font = "sans serif"
+
+[theme.light]
+primaryColor = "#1F6F8B"
+backgroundColor = "#EEF2F1"
+secondaryBackgroundColor = "#FCFCFB"
+textColor = "#15242B"
+
+[theme.light.sidebar]
+backgroundColor = "#E4EBE9"
+secondaryBackgroundColor = "#FCFCFB"
+textColor = "#15242B"
+
+[theme.dark]
+primaryColor = "#6BB8D4"
+backgroundColor = "#0E181C"
+secondaryBackgroundColor = "#152228"
+textColor = "#E6EEF0"
+
+[theme.dark.sidebar]
+backgroundColor = "#122027"
+secondaryBackgroundColor = "#152228"
+textColor = "#E6EEF0"
+
+[browser]
+gatherUsageStats = false

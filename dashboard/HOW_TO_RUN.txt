@@ -1,0 +1,12 @@
+Team 15 dashboard (Streamlit + Plotly)
+
+1. Open a terminal in the folder C:\Users\yashu\Team15_research
+2. Install once:      pip install streamlit plotly pandas numpy
+3. Start it:          streamlit run dashboard/app.py
+4. It opens in the browser at http://localhost:8501 . Use the page list on the left.
+
+The dashboard reads the Kaggle outputs in kaggle_results_acc2\ and the demo data in demo\demo_data.json.
+The station map needs internet for the background map tiles; every other page works offline.
+
+Pages: Overview, Network analytics, Station explorer, Yellow Line test, Headway, All lines,
+Machine learning, Demand forecaster, Spark scaling, Pink Line, Data & reproducibility.

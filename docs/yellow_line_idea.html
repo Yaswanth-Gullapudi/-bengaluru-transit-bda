@@ -1,0 +1,264 @@
+<title>Yellow Line Rerouting Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column styled like a transit line diagram; metro line colours act as section markers and in the diagrams. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#17202b; --muted:#5b6675; --rule:#dfe3e9;
+  --purple:#7d3c98; --green:#23924a; --yellow:#d9a400; --bus:#1f6fb2; --warn:#b4541a;
+  --chip:#eef1f5; --codebg:#eef1f5;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --surface:#18202a; --fg:#e7ebf0; --muted:#9aa6b5; --rule:#2a3542;
+  --purple:#b583cc; --green:#4cc27a; --yellow:#f2c230; --bus:#5aa6e6; --warn:#e8915a;
+  --chip:#222c38; --codebg:#1f2833; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --surface:#18202a; --fg:#e7ebf0; --muted:#9aa6b5; --rule:#2a3542;
+  --purple:#b583cc; --green:#4cc27a; --yellow:#f2c230; --bus:#5aa6e6; --warn:#e8915a;
+  --chip:#222c38; --codebg:#1f2833; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:860px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(1.9rem,4.5vw,2.8rem);font-weight:700}
+h2{font-size:1.5rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0;max-width:68ch}
+a{color:var(--bus)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--codebg);padding:1px 5px;border-radius:4px}
+.eyebrow{font:500 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{padding-block:48px 28px;display:grid;gap:14px;border-bottom:1px solid var(--rule)}
+.lines{display:flex;gap:6px;height:6px;max-width:220px}
+.lines span{flex:1;border-radius:3px}
+.lede{font-size:1.12rem;color:var(--fg)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--chip);border-radius:999px;padding:3px 11px;font:500 .78rem var(--mono);color:var(--muted)}
+.chip.due{color:var(--warn)}
+section{padding-block:36px;border-bottom:1px solid var(--rule);display:grid;gap:16px}
+section > h2{display:flex;align-items:center;gap:10px}
+section > h2::before{content:"";width:14px;height:14px;border-radius:50%;border:3px solid var(--mk,var(--purple));background:var(--surface);flex:none}
+.q{background:var(--surface);border:1px solid var(--rule);border-left:5px solid var(--yellow);border-radius:6px;padding:16px 18px;font:500 1.08rem/1.5 var(--display)}
+.diagram{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px;overflow-x:auto}
+.diagram svg{display:block;min-width:620px;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:560px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 .74rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:0;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;position:relative;padding-bottom:18px}
+ol.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--surface);border:3px solid var(--purple);display:grid;place-items:center;font:700 .8rem var(--mono);z-index:1}
+ol.steps li::after{content:"";position:absolute;left:13px;top:28px;bottom:0;width:3px;background:var(--rule)}
+ol.steps li:last-child::after{display:none}
+ol.steps li.main::before{border-color:var(--yellow)}
+ol.steps li > div{min-width:0;display:grid;gap:4px}
+.tag{font:500 .7rem var(--mono);color:var(--yellow);letter-spacing:.06em;text-transform:uppercase}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px;display:grid;gap:8px;align-content:start;min-width:0}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:.93rem}
+.day{border-top:5px solid var(--mk)}
+.slot{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:.92rem;padding-block:6px;border-bottom:1px dashed var(--rule)}
+.slot:last-child{border-bottom:0}
+.slot b{font:500 .78rem var(--mono);color:var(--muted);padding-top:2px}
+.who{display:inline-block;font:500 .7rem var(--mono);padding:0 6px;border-radius:4px;background:var(--chip);color:var(--muted);margin-left:4px}
+.cut{color:var(--muted);text-decoration:line-through}
+.odds{display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:minmax(150px,240px) 1fr 52px;gap:10px;align-items:center;font-size:.9rem}
+.track{height:10px;background:var(--chip);border-radius:5px;overflow:hidden}
+.track span{display:block;height:100%;background:var(--green);border-radius:5px}
+.bar .num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.note{font-size:.85rem;color:var(--muted)}
+pre{background:var(--codebg);border-radius:8px;padding:14px;overflow-x:auto;font:400 .8rem/1.55 var(--mono);margin:0}
+@media (max-width:520px){.bar{grid-template-columns:1fr 46px}.bar .lab{grid-column:1/-1}.slot{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="lines" aria-hidden="true"><span style="background:var(--purple)"></span><span style="background:var(--green)"></span><span style="background:var(--yellow)"></span><span style="background:var(--bus)"></span></div>
+  <span class="eyebrow">Team 15 · Big Data Analytics for Bengaluru Public Transport</span>
+  <h1>Did the bus network decide who lost metro riders when the Yellow Line opened?</h1>
+  <p class="lede">A natural experiment that joins BMRCL hourly ridership with dated BMTC bus-network snapshots. It runs on open data you can download today, processed in Spark on HDFS.</p>
+  <div class="meta">
+    <span class="chip">Yellow Line opened 11 Aug 2025</span>
+    <span class="chip">83 metro stations · ~5,000 bus routes</span>
+    <span class="chip">~1.2M origin–destination rows</span>
+    <span class="chip due">Build deadline: end of 22 Nov 2026</span>
+  </div>
+</header>
+
+<section style="--mk:var(--yellow)">
+  <h2>The idea</h2>
+  <p>Before 11 Aug 2025 there was no metro to Hosur Road or Electronic City. Many commuters heading there rode the Purple or Green Line to a station such as Banashankari or Chickpete, got off, and caught a BMTC bus for the rest of the trip.</p>
+  <p>When the Yellow Line opened, those commuters could stay in the metro: change at RV Road and ride straight to a Yellow station. In the metro data, their <b>exit station changes</b>. The same origin sends fewer people to the old bus-transfer station and more to Yellow stations.</p>
+  <div class="diagram" role="img" aria-label="Before the opening, the trip is metro to Banashankari, then bus to Electronic City. After the opening, the trip is metro to RV Road, then the Yellow Line to Electronic City.">
+    <svg viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+      <text x="10" y="22" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">BEFORE 11 AUG</text>
+      <line x1="40" y1="60" x2="300" y2="60" stroke="var(--green)" stroke-width="7" stroke-linecap="round"/>
+      <line x1="300" y1="60" x2="600" y2="60" stroke="var(--bus)" stroke-width="5" stroke-dasharray="10 7" stroke-linecap="round"/>
+      <circle cx="40" cy="60" r="9" fill="var(--surface)" stroke="var(--green)" stroke-width="4"/>
+      <circle cx="300" cy="60" r="11" fill="var(--surface)" stroke="var(--fg)" stroke-width="4"/>
+      <circle cx="600" cy="60" r="9" fill="var(--surface)" stroke="var(--bus)" stroke-width="4"/>
+      <text x="40" y="88" font-size="12" fill="var(--fg)" text-anchor="middle">Origin</text>
+      <text x="300" y="88" font-size="12" font-weight="600" fill="var(--fg)" text-anchor="middle">Banashankari (exit)</text>
+      <text x="600" y="88" font-size="12" fill="var(--fg)" text-anchor="middle">Electronic City</text>
+      <text x="450" y="48" font-size="11" fill="var(--bus)" text-anchor="middle">BMTC bus</text>
+
+      <text x="10" y="138" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">AFTER 11 AUG</text>
+      <line x1="40" y1="176" x2="300" y2="176" stroke="var(--green)" stroke-width="7" stroke-linecap="round"/>
+      <line x1="300" y1="176" x2="600" y2="176" stroke="var(--yellow)" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="40" cy="176" r="9" fill="var(--surface)" stroke="var(--green)" stroke-width="4"/>
+      <circle cx="300" cy="176" r="11" fill="var(--surface)" stroke="var(--yellow)" stroke-width="4"/>
+      <circle cx="600" cy="176" r="11" fill="var(--surface)" stroke="var(--fg)" stroke-width="4"/>
+      <text x="40" y="204" font-size="12" fill="var(--fg)" text-anchor="middle">Origin</text>
+      <text x="300" y="204" font-size="12" fill="var(--fg)" text-anchor="middle">RV Road (change)</text>
+      <text x="600" y="204" font-size="12" font-weight="600" fill="var(--fg)" text-anchor="middle">Yellow Line station (exit)</text>
+      <text x="450" y="164" font-size="11" fill="var(--muted)" text-anchor="middle">Yellow Line</text>
+    </svg>
+    <div class="legend"><span><i style="background:var(--green)"></i>Green/Purple Line</span><span><i style="background:var(--yellow)"></i>Yellow Line</span><span><i style="background:var(--bus)"></i>BMTC bus leg</span><span>Bold label = exit station recorded at the fare gate</span></div>
+  </div>
+  <div class="q">Research question: when a new metro line opens, does the existing bus network predict how ridership is redistributed across the old metro stations?</div>
+  <p><b>Why it needs both datasets.</b> Metro data alone doesn't explain why a station mattered. Bus data alone doesn't show that metro riders moved. Combining them turns "bus + metro" into a question that can be tested.</p>
+</section>
+
+<section style="--mk:var(--bus)">
+  <h2>Data, all downloadable now</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Dataset</th><th>Coverage</th><th>Use</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td><b>Metro station-pair hourly</b><br><code>stationpair-hourly-enhanced.parquet</code></td><td class="num">1–18 Aug 2025</td><td>Main test (origin → destination shifts)</td><td><a href="https://github.com/Vonter/bmrcl-ridership-hourly/tree/main/data">bmrcl-ridership-hourly</a></td></tr>
+      <tr><td><b>Metro station hourly entries</b><br><code>station-hourly.parquet</code></td><td class="num">1–18 Aug,<br>1–30 Sep 2025</td><td>Time-of-day pattern, persistence into September</td><td>same repo</td></tr>
+      <tr><td><b>Metro station hourly exits</b><br><code>station-hourly-exits.parquet</code></td><td class="num">1–18 Aug 2025</td><td>Morning-peak exit drop</td><td>same repo</td></tr>
+      <tr><td><b>BMTC GTFS, before</b> (commit <code>6077c6a902</code>)</td><td class="num">4 Aug 2025</td><td>Bus-link score per metro station</td><td><a href="https://github.com/Vonter/bmtc-gtfs">bmtc-gtfs</a> · <code>gtfs/bmtc.zip</code></td></tr>
+      <tr><td><b>BMTC GTFS, after</b> (commit <code>5b22150afc</code>)</td><td class="num">2 Sep 2025</td><td>How BMTC changed its routes</td><td>same repo</td></tr>
+      <tr><td><b>Metro station coordinates</b></td><td class="num">current</td><td>Spatial join to bus stops</td><td>OpenStreetMap (Overpass)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Raw link pattern for a dated snapshot: <code>https://github.com/Vonter/bmtc-gtfs/raw/&lt;commit&gt;/gtfs/bmtc.zip</code>. Licence is ODbL; cite both repos and the RTI source.</p>
+</section>
+
+<section style="--mk:var(--purple)">
+  <h2>Method</h2>
+  <ol class="steps">
+    <li><div><h3>Spark pipeline on HDFS</h3><p>Load the parquet files and the GTFS text files into HDFS, harmonise station names using the repo's name and code maps, and join each metro station to the BMTC stops within 400 m and 800 m, measured along the OSM walking network.</p></div></li>
+    <li><div><h3>Bus-link score for each old station</h3><p>From the 4 Aug bus network: <code>YellowLink_s</code> is the share of bus trips near station <i>s</i> that also stop within 800 m of a Yellow station. Also compute <code>BusTrips_s</code> and <code>Collinear_s</code> (bus route length running alongside the Yellow alignment). Freeze the top-10 "bus-transfer stations" and pre-register the list and the main specification on OSF <b>before</b> looking at ridership.</p></div></li>
+    <li class="main"><div><span class="tag">Main result</span><h3>Origin–destination diversion test</h3><p>For each origin, did the share of trips going to bus-transfer stations fall after 11 Aug? Comparing within the same origin on the same day cancels anything local to that origin, such as the flower show, joyriders or rain.</p><pre>log(1+flow[o,d,day,hr]) ~ FE[o×day×hr] + FE[o×d×hr]
+                          + β · After × YellowLink_d      (expect β &lt; 0)</pre><p>Estimate it with log-OLS and with PPML (Poisson pseudo-maximum likelihood), since many station pairs have zero trips in a given hour.</p><p>Cross-check: origins that lost the most trips to bus-transfer stations should be the same origins that gained the most trips to Yellow stations.</p></div></li>
+    <li><div><h3>Time-of-day signature</h3><p>Rerouted commuters should mean fewer morning-peak exits and fewer evening-peak entries at bus-transfer stations. The flower show would add midday and weekend traffic instead.</p></div></li>
+    <li><div><h3>September persistence</h3><p>Check whether the drop holds across 30 days of entries. Drop the 6–7 am hour, because first service moved to 6:00 am on 10 Sep. Then estimate the headway elasticity: an event study of Yellow-station entries around the 10 Sep cut from 25 to 19 min, with a synthetic-control check, split by whether a station gained BMTC feeder routes.</p></div></li>
+    <li><div><h3>How BMTC responded</h3><p>Diff the 4 Aug and 2 Sep bus networks: trips cut on old links to Hosur Road, and feeder routes added at Yellow stations. Then track daily bus trips near Yellow stations vs other stations across all 27 GTFS snapshots (Feb 2024 to Nov 2026), as a supply-side event study.</p></div></li>
+    <li><div><h3>Robustness</h3><p>Correlation of the score with distance to RV Road, plus the main test within a single line. Placebo opening dates (5 and 7 Aug). Shuffling the score across stations 1,000 times. Wild-cluster bootstrap for standard errors. Dropping 15–16 Aug, Lalbagh and the first two days of joyriding. 400 m vs 800 m buffers. The score recomputed from the 2 Sep snapshot.</p></div></li>
+    <li><div><h3>Spark scaling</h3><p>Time the pipeline on 1, 2 and 4 executors and at 1×, 5× and 20× data volume, and compare against the same job in pandas on one machine.</p></div></li>
+    <li class="main"><div><span class="tag">Model comparison</span><h3>Spark MLlib: does bus data improve prediction?</h3><p>Predict hourly station entries in the week after the opening (11–18 Aug). Train on 11–15 Aug and test on 16–18 Aug. Fit Linear Regression, Random Forest and Gradient-Boosted Trees, each twice: with <b>metro-only features</b> (station, hour, weekday, pre-opening average, distance to RV Road) and with <b>metro + bus features</b> (<code>BusTrips_s</code>, <code>YellowLink_s</code>). Report RMSE, MAE and R². If the bus features help, that is the case for combining the datasets, stated as a number. If they don't, report that honestly.</p></div></li>
+  </ol>
+</section>
+
+<section style="--mk:var(--green)">
+  <h2>Mapped to the evaluation rubric (30 marks)</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Component</th><th>Marks</th><th>What we show</th></tr></thead>
+    <tbody>
+      <tr><td><b>Problem definition &amp; literature survey</b><br><span class="note">CO1, CO4</span></td><td class="num">6</td><td>Sharper gap: no Indian study has used a metro opening plus the bus network to explain how ridership moved. Survey updates: correct Wang et al. to 2021; add Hasan et al. 2025 (TR-A), Gadepalli et al. 2022, Chai, Sun &amp; Yin 2025 (TR-A) and the Diagram Chasing analysis.</td></tr>
+      <tr><td><b>Big data technology &amp; methodology</b><br><span class="note">CO2, CO3</span></td><td class="num">8</td><td>HDFS for storage, as partitioned parquet. PySpark ingest of ~1.2M station-pair rows plus multi-million-row GTFS <code>stop_times</code>. A broadcast spatial join between stations and stops. The trip-flow table built in Spark SQL. Methodology: the bus-link score and the diversion test.</td></tr>
+      <tr><td><b>Model evaluation &amp; comparative analysis</b><br><span class="note">CO5</span></td><td class="num">6</td><td>Three comparisons:<br>1) MLlib LR vs RF vs GBT, each with metro-only vs metro + bus features (RMSE, MAE, R²);<br>2) Spark vs pandas runtime, plus scaling over 1/2/4 executors and 1×/5×/20× data;<br>3) a naive before/after vs the fixed-effects diversion test.</td></tr>
+      <tr><td><b>Presentation / viva</b><br><span class="note">CO5</span></td><td class="num">10</td><td>Before/after trip diagram, station map, event-study plot, model comparison table, scaling plots. Prepare answers on: why HDFS and Spark for this size, why fixed effects, the flower-show confound, and why bus ridership isn't used.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section style="--mk:var(--warn)">
+  <h2>Two-day build plan</h2>
+  <p>Every step stays in. Three people run notebooks in parallel on Kaggle and Colab: <b>A</b> on the pipeline and scaling, <b>B</b> on the bus network and maps, <b>C</b> on ridership analysis and statistics.</p>
+  <div class="card">
+    <h3>Compute setup</h3>
+    <ul>
+      <li><b>Kaggle notebook</b> (4 CPU cores, ~30 GB RAM): Hadoop single-node HDFS + PySpark, the OSM walking network, the MLlib models and the scaling runs on <code>local[1]</code>, <code>local[2]</code> and <code>local[4]</code>.</li>
+      <li><b>Colab</b> (2 cores, ~12 GB RAM): runs in parallel for the 1,000-permutation test, the bootstrap, the regressions and the figures.</li>
+      <li><b>Shared data:</b> upload all raw files once as a private Kaggle Dataset (metro parquet + 27 GTFS zips, ~3 GB) so every notebook reads the same copy. Save outputs to the Kaggle output folder or Google Drive.</li>
+      <li><b>HDFS tip:</b> start daemons with <code>hdfs --daemon start namenode</code> and <code>hdfs --daemon start datanode</code> instead of <code>start-dfs.sh</code>, which needs SSH and fails on Colab and Kaggle.</li>
+    </ul>
+  </div>
+  <div class="grid2">
+    <div class="card day" style="--mk:var(--purple)">
+      <span class="eyebrow">Day 1 · Sat 21 Nov</span>
+      <h3>Data in, score built, main test run</h3>
+      <div>
+        <div class="slot"><b>Morning</b><span>HDFS + Spark running in a Kaggle notebook <span class="who">A</span>. Download the metro files and all 27 GTFS snapshots; publish them as a private Kaggle Dataset <span class="who">B</span>. Explore the station-pair file and confirm the 83 station names <span class="who">C</span>.</span></div>
+        <div class="slot"><b>Midday</b><span>Ingest everything to HDFS as partitioned parquet; build the station-name crosswalk <span class="who">A</span>. Station coordinates and the walking network from OSM (OSMnx); walking-distance join at 400/800 m to bus stops <span class="who">B</span>. Write the OLS and PPML regression code on a dummy score <span class="who">C</span>.</span></div>
+        <div class="slot"><b>Afternoon</b><span>Compute <code>BusTrips_s</code>, <code>YellowLink_s</code> and <code>Collinear_s</code>; <b>freeze the top-10 list and pre-register it on OSF</b> along with the main specification <span class="who">B</span>. Build the origin × destination × day × hour panel in Spark SQL <span class="who">A</span>. Plan the event-study plots <span class="who">C</span>.</span></div>
+        <div class="slot"><b>Evening</b><span>Run the main diversion test (log-OLS and PPML) with the real score, plus the cross-origin scatter <span class="who">C</span>. Map of stations coloured by score <span class="who">B</span>. Build the station-hour feature table for MLlib <span class="who">A</span>.</span></div>
+      </div>
+    </div>
+    <div class="card day" style="--mk:var(--yellow)">
+      <span class="eyebrow">Day 2 · Sun 22 Nov</span>
+      <h3>Checks, scaling, write-up</h3>
+      <div>
+        <div class="slot"><b>Morning</b><span>MLlib comparison: LR, RF and GBT × two feature sets, tuned with cross-validation <span class="who">C</span>. Scaling runs and the Spark vs pandas timing <span class="who">A</span>. Bus supply event study across all 27 GTFS snapshots (2024–2026) <span class="who">B</span>.</span></div>
+        <div class="slot"><b>Midday</b><span>Time-of-day signature, September persistence and the headway elasticity study (event study around 10 Sep, with a synthetic-control check) <span class="who">C</span>. Update the literature survey slides <span class="who">B</span>.</span></div>
+        <div class="slot"><b>Afternoon</b><span>Full robustness suite, split across Kaggle and Colab <span class="who">C</span>. Final figures <span class="who">B</span>. Scaling table and plots <span class="who">A</span>.</span></div>
+        <div class="slot"><b>Evening</b><span>Project report and slides; repo README with exact commits and steps to rerun <span class="who">all</span>.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Where the schedule is tight</h3>
+    <ul>
+      <li><b>HDFS setup on Kaggle:</b> allow up to an hour. If it is still failing after that, keep going in Spark local mode and add HDFS back that evening, so nobody is blocked.</li>
+      <li><b>OSM walking network for Bengaluru:</b> the download and graph build take a while. Start it first thing on Day 1 midday.</li>
+      <li><b>1,000 permutations × the fixed-effects model:</b> the slowest job. Split it across two runtimes on Day 2 afternoon.</li>
+      <li><b>Write-up:</b> two days covers the build and the presentation. Write the journal paper after the review.</li>
+    </ul>
+  </div>
+</section>
+
+<section style="--mk:var(--green)">
+  <h2>Deliverables by 22 Nov</h2>
+  <div class="grid2">
+    <div class="card"><h3>Figures</h3><ul>
+      <li>Map of metro stations coloured by bus-link score, with the Yellow alignment</li>
+      <li>Daily share of trips to bus-transfer stations, before vs after (event-study plot)</li>
+      <li>Scatter across origins: loss to bus-transfer stations vs gain to Yellow</li>
+      <li>Hourly exit profile at bus-transfer stations, before vs after</li>
+      <li>Spark runtime vs executors and vs data size, against pandas</li>
+      <li>Model comparison table: 3 models × 2 feature sets</li>
+    </ul></div>
+    <div class="card"><h3>Artefacts</h3><ul>
+      <li>PySpark notebooks: ingest, score, panel, models, scaling</li>
+      <li>Frozen bus-transfer station list (git commit)</li>
+      <li>Results table: main estimate plus robustness columns</li>
+      <li>Report and slides for the review</li>
+    </ul></div>
+  </div>
+</section>
+
+<section style="--mk:var(--purple)">
+  <h2>Is it publishable?</h2>
+  <p><b>What's new:</b> the first quasi-experimental study of an Indian metro opening that uses the dated bus network to test <i>why</i> ridership moved. Hasan et al. 2025 (TR-A) is a single snapshot with no opening event. Gadepalli et al. 2022 is descriptive and uses closed data. The Diagram Chasing blog only guessed this explanation.</p>
+  <div class="odds" aria-label="Estimated acceptance odds">
+    <div class="bar"><span class="lab">Scopus conference</span><div class="track"><span style="width:62%"></span></div><span class="num">55–70%</span></div>
+    <div class="bar"><span class="lab">Mid-tier journal</span><div class="track"><span style="width:35%"></span></div><span class="num">25–45%</span></div>
+    <div class="bar"><span class="lab">Top venue</span><div class="track"><span style="width:6%"></span></div><span class="num">≤ 15%</span></div>
+  </div>
+  <p class="note">Ranges are the novelty reviewer's judgement, not measured figures. The upper ends assume extra data later, such as July 2025 ridership via RTI or a Pink Line replication.</p>
+  <div class="grid2">
+    <div class="card"><h3>Where to send it</h3><ul>
+      <li>IEEE ITSC, IEEE BigData workshops, Springer LNCE / TPMDC</li>
+      <li><i>Findings</i> (short format, one clean result)</li>
+      <li>Stretch: <i>Case Studies on Transport Policy</i>, <i>Transportation in Developing Economies</i></li>
+    </ul></div>
+    <div class="card"><h3>State these limits</h3><ul>
+      <li>Only 8 days of station-pair data after the opening: a short-run result</li>
+      <li>No BMTC ridership: the bus side is measured by trips run</li>
+      <li>No pure control group: the estimate is a <i>differential</i> change</li>
+    </ul></div>
+  </div>
+</section>
+</div>

@@ -1,0 +1,15 @@
+# full pipeline (Kaggle installs these itself)
+pyspark==4.0.1
+pandas>=2.0
+numpy>=1.26
+scipy
+statsmodels>=0.14
+pyfixest>=0.30
+networkx
+osmnx>=2.0
+geopandas>=1.0
+fiona
+psutil
+matplotlib
+pyarrow
+openpyxl

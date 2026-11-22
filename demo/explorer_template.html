@@ -1,0 +1,305 @@
+<title>Yellow Line Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of four working panels; the station explorer is a map + detail split that stacks on phones. */
+:root{
+  --bg:#f5f6f3; --panel:#ffffff; --ink:#17191c; --muted:#5d6268; --rule:#dfe2dc; --soft:#eef0ec;
+  --accent:#1f5fa8; --yellow:#e0b400; --yellow-ink:#7a6100; --green:#13894a; --purple:#7d2a6e; --pink:#d4477e;
+  --good:#1f7a4d; --bad:#b4372f;
+  --display:"Archivo",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121417; --panel:#1b1e22; --ink:#eceee9; --muted:#a1a7ad; --rule:#2f343a; --soft:#23272c;
+  --accent:#6ea8ec; --yellow:#f2cf3a; --yellow-ink:#f2cf3a; --green:#38b872; --purple:#c56cb4; --pink:#ee7aa6; --good:#4fc28a; --bad:#ef7a70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121417; --panel:#1b1e22; --ink:#eceee9; --muted:#a1a7ad; --rule:#2f343a; --soft:#23272c;
+  --accent:#6ea8ec; --yellow:#f2cf3a; --yellow-ink:#f2cf3a; --green:#38b872; --purple:#c56cb4; --pink:#ee7aa6; --good:#4fc28a; --bad:#ef7a70; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-block:28px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:22px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:700}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:20px;display:grid;gap:14px;min-width:0}
+.panel>header{display:grid;gap:4px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px}
+@media (max-width:820px){.split{grid-template-columns:1fr}}
+svg text{font-family:var(--body)}
+.map{width:100%;height:auto;background:var(--soft);border-radius:8px}
+.dot{cursor:pointer;transition:r .12s}
+.dot:focus{outline:none}
+.dot:focus-visible,.dot:hover{stroke:var(--ink);stroke-width:2}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:50%;display:inline-block}
+select,input[type=range]{font:inherit;color:var(--ink)}
+select{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;max-width:100%}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 11.5px/1 var(--mono);padding:5px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--muted)}
+.chip.y{background:color-mix(in srgb,var(--yellow) 22%,transparent);color:var(--yellow-ink);border-color:transparent}
+.chip.p{background:color-mix(in srgb,var(--pink) 18%,transparent);color:var(--pink);border-color:transparent}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+button.chip{font:600 12px/1 var(--body)}
+.kv div{background:var(--soft);border-radius:8px;padding:10px}
+.kv b{display:block;font:600 20px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.kv small{color:var(--muted);font-size:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+td,th{padding:6px 8px;border-bottom:1px solid var(--rule);text-align:right}
+td:first-child,th:first-child{text-align:left}
+th{font:600 11px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.up{color:var(--good)} .down{color:var(--bad)}
+.note{font-size:12.5px;color:var(--muted)}
+.big{font:700 34px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.verdict{font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hash{font:12px/1.4 var(--mono);word-break:break-all;color:var(--muted)}
+ol.frozen{margin:0;padding-left:20px;columns:2;column-gap:24px;font-size:14px}
+@media (max-width:520px){ol.frozen{columns:1}.kv{grid-template-columns:1fr 1fr}}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.steps div{border-top:3px solid var(--accent);padding-top:8px;font-size:13px}
+.steps b{display:block;font-family:var(--display);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Team 15 · Big Data Analytics · BMRCL metro + BMTC bus</div>
+    <h1>Did buses push riders onto the Yellow Line?</h1>
+    <p class="lead">In its first eight days the Yellow Line drew no riders away from bus-linked metro stations (+0.65% per SD, p = 0.64). Frequency did matter: cutting the wait from 25 to 19 minutes added 8.7% riders. Explore the stations, rerun the test under any specification, and try the headway calculator.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-st">
+    <header><div class="eyebrow">1 · Station explorer</div><h2 id="h-st">Pick a station to see its bus links and ridership</h2></header>
+    <div class="split">
+      <div style="display:grid;gap:10px;min-width:0">
+        <label class="note" for="pick">Station</label>
+        <select id="pick"></select>
+        <svg id="map" class="map" viewBox="0 0 400 440" role="img" aria-label="Map of Bengaluru metro stations by line"></svg>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--purple)"></i>Purple</span>
+          <span><i class="sw" style="background:var(--green)"></i>Green</span>
+          <span><i class="sw" style="background:var(--yellow)"></i>Yellow (new, 11 Aug 2025)</span>
+          <span><i class="sw" style="background:var(--pink)"></i>Pink (new, 14 Nov 2026)</span>
+          <span><i class="sw" style="background:transparent;border:2px solid var(--ink)"></i>frozen bus-transfer station</span>
+        </div>
+      </div>
+      <div id="detail" style="display:grid;gap:14px;align-content:start;min-width:0"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-test">
+    <header><div class="eyebrow">2 · Run the test</div><h2 id="h-test">Choose a specification; the predicted loss never appears</h2>
+      <p class="lead">Effect after opening on trips to destinations with 1 SD more bus links to the Yellow corridor. The hypothesis predicts a negative number.</p></header>
+    <label class="note" for="spec">Specification (22 run on Kaggle, notebook 07)</label>
+    <select id="spec"></select>
+    <div class="row"><div class="big" id="est"></div><div id="ci" class="note"></div></div>
+    <svg id="ciplot" viewBox="0 0 640 70" role="img" aria-label="Estimate with 95% confidence interval" style="width:100%;height:auto"></svg>
+    <p class="verdict" id="verdict"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-hw">
+    <header><div class="eyebrow">3 · Headway calculator</div><h2 id="h-hw">What would more frequent trains do?</h2>
+      <p class="lead">Measured elasticity: 0.30 from the 10 Sep 2025 cut (difference-in-differences), 0.21 from synthetic control. Change = (25 / new headway)^elasticity - 1.</p></header>
+    <label for="hw" class="note">New headway: <b id="hwv"></b> minutes (opening service: 25)</label>
+    <input id="hw" type="range" min="8" max="25" step="1" value="19">
+    <div class="row"><div class="big" id="hwout"></div><div class="note" id="hwnote"></div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-ln">
+    <header><div class="eyebrow">4 · All lines</div><h2 id="h-ln">Busy stations with the weakest bus links</h2>
+      <p class="lead">Integration index = average of standardised bus trips and routes within 400 m, feeder trips, and residents within 800 m. Compared with September weekday ridership.</p></header>
+    <div style="overflow-x:auto"><table id="linetab"><thead><tr><th>Line</th><th>Stations</th><th>Integration index</th><th>Bus trips nearby</th><th>Feeder trips</th><th>Weekday entries</th><th>Trips to Yellow, week 1</th></tr></thead><tbody></tbody></table></div>
+    <div><div class="note" style="margin-bottom:6px">Under-served: highest ridership relative to bus links (click to open)</div><div class="chips" id="under"></div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-fc">
+    <header><div class="eyebrow">5 · Next-day demand forecaster</div><h2 id="h-fc">Tomorrow's entries at every station, with a 90% range</h2>
+      <p class="lead">A Spark MLlib Random Forest learned 8-17 Sep 2025 and was tested once on 22-30 Sep, days it never saw. Compared with "same hour last week".</p></header>
+    <div class="kv" id="fckpi"></div>
+    <label class="note" for="fcpick">Station</label>
+    <select id="fcpick"></select>
+    <svg id="fcplot" viewBox="0 0 720 230" role="img" aria-label="Forecast vs actual entries" style="width:100%;height:auto"></svg>
+    <p class="note" id="fcnote">Loading forecasts…</p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-pk">
+    <header><div class="eyebrow">6 · Next event, pre-registered</div><h2 id="h-pk">Pink Line: list frozen before any ridership exists</h2>
+      <p class="lead">Top 10 existing stations by bus link to the Pink corridor, from the 9 Nov 2026 bus network (5 days before opening). The same test runs once Nov-Dec 2026 station-pair data arrives.</p></header>
+    <ol class="frozen" id="pinklist"></ol>
+    <div class="hash" id="pinkhash"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-pipe">
+    <header><div class="eyebrow">How it was built</div><h2 id="h-pipe">One HDFS pipeline, 13 Spark notebooks on Kaggle</h2></header>
+    <div class="steps">
+      <div><b>Ingest</b>26 bus GTFS snapshots, 12 M metro trips into HDFS as Parquet</div>
+      <div><b>Score</b>Bus-link score per station on the OSM walking network</div>
+      <div><b>Freeze</b>Top-10 list hashed before ridership was opened</div>
+      <div><b>Test</b>OD fixed effects, bootstrap, randomisation inference</div>
+      <div><b>Learn</b>Spark MLlib with a shuffled-bus placebo</div>
+      <div><b>Scale</b>Spark 4 cores: 2.2x faster than pandas on 38.6 M rows</div>
+      <div><b>Forecast</b>Next-day demand per station-hour with 90% ranges</div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = __DATA__;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const lineColor = l => l.includes("YELLOW") && !l.includes("GREEN") ? "var(--yellow)" : l.includes("PURPLE") ? "var(--purple)" : l.includes("GREEN") ? "var(--green)" : "var(--yellow)";
+const fmt = n => Math.round(n).toLocaleString("en-IN");
+const pct = x => (x >= 0 ? "+" : "") + (x * 100).toFixed(1) + "%";
+const S = DATA.stations;
+const ns = "http://www.w3.org/2000/svg";
+const el = (t, a = {}, p) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+
+/* ---------- map ---------- */
+const lats = S.map(s => s.lat).concat(DATA.pink.map(p => p.lat)), lons = S.map(s => s.lon).concat(DATA.pink.map(p => p.lon));
+const la0 = Math.min(...lats), la1 = Math.max(...lats), lo0 = Math.min(...lons), lo1 = Math.max(...lons);
+const X = lo => 20 + (lo - lo0) / (lo1 - lo0) * 360, Y = la => 420 - (la - la0) / (la1 - la0) * 400;
+const map = document.getElementById("map");
+DATA.pink.forEach(p => { const g = el("rect", { x: X(p.lon) - 4.5, y: Y(p.lat) - 4.5, width: 9, height: 9, transform: `rotate(45 ${X(p.lon)} ${Y(p.lat)})`, fill: "var(--pink)" }, map); el("title", {}, g).textContent = p.n + " (Pink Line)"; });
+const dots = {};
+S.forEach((s, i) => {
+  const c = el("circle", { cx: X(s.lon), cy: Y(s.lat), r: s.yf ? 6.5 : 5, fill: lineColor(s.l), stroke: s.yf ? "var(--ink)" : "none", "stroke-width": s.yf ? 2 : 0, class: "dot", tabindex: 0, role: "button", "aria-label": s.n }, map);
+  el("title", {}, c).textContent = s.n;
+  c.addEventListener("click", () => select(i));
+  c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
+  dots[i] = c;
+});
+const ring = el("circle", { r: 11, fill: "none", stroke: "var(--accent)", "stroke-width": 2.5 }, map);
+el("text", { x: 22, y: 432, "font-size": 11, fill: "var(--muted)" }, map).textContent = "Station positions from BMRCL GTFS and OpenStreetMap (Pink)";
+
+/* ---------- station picker ---------- */
+const pick = document.getElementById("pick");
+S.map((s, i) => [s.n, i]).sort().forEach(([n, i]) => { const o = document.createElement("option"); o.value = i; o.textContent = n; pick.appendChild(o); });
+pick.addEventListener("change", () => select(+pick.value));
+
+function hourChart(s) {
+  const W = 520, H = 190, x0 = 44, x1 = W - 10, y0 = 14, y1 = H - 28;
+  const ser = [["pre", "1-10 Aug (before)", "var(--muted)", "4 4"], ["post", "11-18 Aug (after)", "var(--accent)", ""], ["sep", "September", "var(--green)", ""]];
+  const mx = Math.max(1, ...ser.flatMap(([k]) => s.h[k]));
+  const xs = h => x0 + h / 23 * (x1 - x0), ys = v => y1 - v / mx * (y1 - y0);
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Average weekday entries by hour"); svg.style.width = "100%"; svg.style.height = "auto";
+  [0, .5, 1].forEach(f => { el("line", { x1: x0, x2: x1, y1: ys(mx * f), y2: ys(mx * f), stroke: "var(--rule)" }, svg); el("text", { x: x0 - 6, y: ys(mx * f) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, svg).textContent = fmt(mx * f); });
+  [0, 6, 12, 18, 23].forEach(h => el("text", { x: xs(h), y: H - 10, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, svg).textContent = h + ":00");
+  ser.forEach(([k, lab, c, dash]) => {
+    el("path", { d: s.h[k].map((v, h) => (h ? "L" : "M") + xs(h) + " " + ys(v)).join(""), fill: "none", stroke: c, "stroke-width": k === "post" ? 2.4 : 1.8, "stroke-dasharray": dash }, svg);
+  });
+  return svg;
+}
+
+function select(i) {
+  const s = S[i]; pick.value = i;
+  ring.setAttribute("cx", X(s.lon)); ring.setAttribute("cy", Y(s.lat));
+  const d = s.d, chg = d.pre > 0 ? d.post / d.pre - 1 : null, chgS = d.pre > 0 ? d.sep / d.pre - 1 : null;
+  const chips = s.l.split("+").map(l => `<span class="chip">${l[0] + l.slice(1).toLowerCase()} Line</span>`).join("") +
+    (s.new ? `<span class="chip y">new Yellow station</span>` : "") + (s.yf ? `<span class="chip y">frozen Yellow bus-transfer station</span>` : "") + (s.pf ? `<span class="chip p">frozen Pink bus-transfer station</span>` : "");
+  const det = document.getElementById("detail");
+  det.innerHTML = `<div><h3 style="font-size:22px">${s.n}</h3><div class="chips" style="margin-top:8px">${chips}</div></div>
+    <div class="kv">
+      <div><b>${fmt(s.bt)}</b><small>weekday bus trips within 400 m walk</small></div>
+      <div><b>${s.yl == null ? "n/a" : (s.yl * 100).toFixed(0) + "%"}</b><small>of them reach the Yellow corridor (YellowLink)</small></div>
+      <div><b>${s.pl == null ? "n/a" : (s.pl * 100).toFixed(0) + "%"}</b><small>reach the Pink corridor (PinkLink)</small></div>
+      <div><b>${s.rank ? "#" + s.rank : "n/a"}</b><small>bus-metro integration rank of 83</small></div>
+      <div><b>${s.ft == null ? "n/a" : fmt(s.ft)}</b><small>metro-feeder (MF) bus trips nearby</small></div>
+      <div><b class="${s.gap > 1 ? "down" : ""}">${s.gap == null ? "n/a" : s.gap > 1 ? "Under-served" : s.gap < -1 ? "Well served" : "Balanced"}</b><small>ridership vs bus links</small></div>
+    </div>
+    <table><thead><tr><th>Average weekday entries</th><th>Per day</th><th>vs before</th></tr></thead><tbody>
+      <tr><td>1-10 Aug 2025, before opening</td><td>${d.pre ? fmt(d.pre) : "closed"}</td><td></td></tr>
+      <tr><td>11-18 Aug 2025, after opening</td><td>${fmt(d.post)}</td><td class="${chg == null ? "" : chg >= 0 ? "up" : "down"}">${chg == null ? "new" : pct(chg)}</td></tr>
+      <tr><td>September 2025</td><td>${fmt(d.sep)}</td><td class="${chgS == null ? "" : chgS >= 0 ? "up" : "down"}">${chgS == null ? "new" : pct(chgS)}</td></tr>
+    </tbody></table>
+    <div><div class="note" style="margin-bottom:4px">Average weekday entries by hour: <span style="color:var(--muted)">dashed before</span>, <span style="color:var(--accent)">blue after</span>, <span style="color:var(--green)">green September</span></div></div>`;
+  det.appendChild(hourChart(s));
+  const n = document.createElement("p"); n.className = "note";
+  n.textContent = "Raw station changes mix every city-wide shock; the test in panel 2 compares destinations from the same origin on the same day, which removes them.";
+  det.appendChild(n);
+}
+select(S.findIndex(s => s.n === "Banashankari"));
+
+/* ---------- run the test ---------- */
+const spec = document.getElementById("spec");
+DATA.rob.forEach((r, i) => { const o = document.createElement("option"); o.value = i; o.textContent = r.m; spec.appendChild(o); });
+function showSpec() {
+  const r = DATA.rob[+spec.value], lo = r.b - 1.96 * r.se, hi = r.b + 1.96 * r.se;
+  document.getElementById("est").textContent = pct(r.b);
+  document.getElementById("ci").innerHTML = `95% CI ${pct(lo)} to ${pct(hi)}<br>p = ${r.p.toFixed(3)}`;
+  const svg = document.getElementById("ciplot"); svg.innerHTML = "";
+  const a = -0.08, b = 0.12, Xs = v => 20 + (v - a) / (b - a) * 600;
+  el("rect", { x: Xs(a), y: 18, width: Xs(0) - Xs(a), height: 26, fill: "color-mix(in srgb, var(--bad) 10%, transparent)" }, svg);
+  el("text", { x: Xs(a) + 6, y: 14, "font-size": 11, fill: "var(--bad)" }, svg).textContent = "predicted: loss";
+  [-0.05, 0, 0.05, 0.1].forEach(t => { el("line", { x1: Xs(t), x2: Xs(t), y1: 16, y2: 46, stroke: t ? "var(--rule)" : "var(--muted)" }, svg); el("text", { x: Xs(t), y: 62, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, svg).textContent = (t * 100).toFixed(0) + "%"; });
+  el("line", { x1: Xs(Math.max(lo, a)), x2: Xs(Math.min(hi, b)), y1: 31, y2: 31, stroke: "var(--accent)", "stroke-width": 3 }, svg);
+  el("circle", { cx: Xs(r.b), cy: 31, r: 6, fill: "var(--accent)" }, svg);
+  const v = document.getElementById("verdict");
+  v.textContent = r.p < 0.05 ? (r.b > 0 ? "Significant, but positive: the opposite of the predicted loss." : "Significant loss.") : "Not significant: no evidence that bus-linked destinations lost riders.";
+}
+spec.addEventListener("change", showSpec); showSpec();
+
+/* ---------- headway ---------- */
+const hw = document.getElementById("hw");
+function showHw() {
+  const h = +hw.value, hi = Math.pow(25 / h, 0.30) - 1, lo = Math.pow(25 / h, 0.21) - 1;
+  document.getElementById("hwv").textContent = h;
+  document.getElementById("hwout").textContent = h === 25 ? "0%" : `+${(lo * 100).toFixed(1)}% to +${(hi * 100).toFixed(1)}%`;
+  document.getElementById("hwnote").innerHTML = h === 19 ? "Actual 10 Sep 2025 change (4th train): entries +8.7%, exits +6.1%." : h === 15 ? "Peak headway after the 5th train (1 Nov 2025)." : "Predicted change in Yellow Line ridership from frequency alone, using the measured elasticities.";
+}
+hw.addEventListener("input", showHw); showHw();
+
+/* ---------- all lines ---------- */
+const tb = document.querySelector("#linetab tbody");
+const ty = {"Purple": DATA.toyellow["Purple"], "Green": DATA.toyellow["Green"], "Interchange (Majestic)": DATA.toyellow["Majestic"], "Interchange (RV Road)": DATA.toyellow["RV Road"]};
+DATA.lines.forEach(r => { const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${r.line}</td><td>${r.n}</td><td>${(r.ii >= 0 ? "+" : "") + r.ii.toFixed(2)}</td><td>${fmt(r.bus)}</td><td>${fmt(r.feeder)}</td><td>${fmt(r.ent)}</td><td>${ty[r.line] != null ? ty[r.line] + "%" : "-"}</td>`; tb.appendChild(tr); });
+const un = document.getElementById("under");
+DATA.under.forEach(n => { const i = S.findIndex(s => s.n === n); const b = document.createElement("button");
+  b.className = "chip"; b.type = "button"; b.style.cursor = "pointer"; b.style.background = "var(--soft)";
+  b.textContent = n.replace("Nadaprabhu Kempegowda Station, ", "").replace("Dr. B. R. Ambedkar Station, ", "");
+  b.addEventListener("click", () => { select(i); document.getElementById("h-st").scrollIntoView({behavior: "smooth"}); }); un.appendChild(b); });
+
+/* ---------- forecaster ---------- */
+const M = DATA.fcm;
+document.getElementById("fckpi").innerHTML =
+  `<div><b>${M.skill > 0 ? "+" : ""}${M.skill}%</b><small>smaller average miss than "same hour last week"</small></div>` +
+  `<div><b>${M.mae}</b><small>average miss, entries per station-hour</small></div>` +
+  `<div><b>${M.cov}%</b><small>of actual values inside the 90% range</small></div>` +
+  `<div><b>${M.prec}%</b><small>precision of crowding warnings</small></div>`;
+const fcpick = document.getElementById("fcpick");
+function drawFc(FC) {
+  const r = FC[fcpick.value]; if (!r) return;
+  const svg = document.getElementById("fcplot"); svg.innerHTML = "";
+  const n = r.a.length, x0 = 50, x1 = 710, y0 = 12, y1 = 200;
+  const mx = Math.max(1, ...r.hi, ...r.a);
+  const X = i => x0 + i / (n - 1) * (x1 - x0), Y = v => y1 - v / mx * (y1 - y0);
+  [0, .5, 1].forEach(f => { el("line", {x1: x0, x2: x1, y1: Y(mx * f), y2: Y(mx * f), stroke: "var(--rule)"}, svg);
+    el("text", {x: x0 - 6, y: Y(mx * f) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)"}, svg).textContent = fmt(mx * f); });
+  const band = r.hi.map((v, i) => `${X(i)},${Y(v)}`).concat(r.lo.map((v, i) => `${X(i)},${Y(v)}`).reverse()).join(" ");
+  el("polygon", {points: band, fill: "color-mix(in srgb, var(--accent) 18%, transparent)"}, svg);
+  el("path", {d: r.p.map((v, i) => (i ? "L" : "M") + X(i) + " " + Y(v)).join(""), fill: "none", stroke: "var(--accent)", "stroke-width": 1.8}, svg);
+  r.a.forEach((v, i) => el("circle", {cx: X(i), cy: Y(v), r: 1.8, fill: "var(--ink)"}, svg));
+  let last = ""; r.t.forEach((t, i) => { const d = t.split("|")[0]; if (d !== last) { last = d;
+    el("line", {x1: X(i), x2: X(i), y1: y0, y2: y1, stroke: "var(--rule)"}, svg);
+    el("text", {x: X(i) + 3, y: 222, "font-size": 11, fill: "var(--muted)"}, svg).textContent = d + " Sep"; } });
+  const inside = r.a.filter((v, i) => v >= r.lo[i] && v <= r.hi[i]).length;
+  document.getElementById("fcnote").textContent = `Blue line: forecast; band: 90% range; dots: actual entries each hour (6:00-22:00). ` +
+    `${Math.round(inside / n * 100)}% of this station's hours fell inside the range.`;
+}
+fetch("forecast.json").then(r => r.json()).then(FC => {
+  Object.keys(FC).sort().forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n; fcpick.appendChild(o); });
+  fcpick.value = "Nadaprabhu Kempegowda Station, Majestic"; drawFc(FC);
+  fcpick.addEventListener("change", () => drawFc(FC));
+}).catch(() => { document.getElementById("fcnote").textContent = "Forecast data could not be loaded."; });
+
+/* ---------- pink ---------- */
+const pl = document.getElementById("pinklist");
+S.filter(s => s.pf).sort((a, b) => b.pl - a.pl).forEach(s => { const li = document.createElement("li"); li.textContent = `${s.n} (${(s.pl * 100).toFixed(0)}%)`; pl.appendChild(li); });
+document.getElementById("pinkhash").textContent = "Pink SHA-256 " + DATA.phash + "  ·  Yellow SHA-256 " + DATA.yhash;
+</script>

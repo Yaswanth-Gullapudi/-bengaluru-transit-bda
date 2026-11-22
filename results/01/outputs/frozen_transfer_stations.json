@@ -1,0 +1,17 @@
+{
+  "created_utc": "2026-11-21T12:17:03+00:00",
+  "rule": "top 10 old stations by YellowLink (snapshot 2025-08-04, 400 m catchment, 800 m corridor), excluding RV Road and stations whose catchment touches the corridor",
+  "stations": [
+    "Lalbagh",
+    "Kundalahalli",
+    "Sri Sathya Sai Hospital",
+    "Indiranagar",
+    "Nallurahalli",
+    "Krishnarajapura",
+    "South End Circle",
+    "Benniganahalli",
+    "Pattandur Agrahara",
+    "Banashankari"
+  ],
+  "sha256": "2ea7ed4b7265bc008de2affb9ff20e73478763c22098f946d03488d0deaef7a9"
+}

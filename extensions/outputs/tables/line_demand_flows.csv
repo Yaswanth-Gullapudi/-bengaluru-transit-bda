@@ -1,0 +1,24 @@
+lo,ld,after,before,change_pct
+Purple,Purple,306018.4,297660.4,2.807897859439823
+Green,Green,159419.6,163097.2,-2.254851708061212
+Purple,Green,78548.8,76607.4,2.5342199317559544
+Green,Purple,77544.4,74920.4,3.5023838634070215
+Yellow,Yellow,23903.0,0.4,5975650.0
+Purple,Interchange (Majestic),22651.2,19999.8,13.257132571325725
+Green,Interchange (Majestic),21519.2,19613.4,9.716826251440347
+Interchange (Majestic),Purple,17060.4,14737.0,15.765759652575163
+Interchange (Majestic),Green,15911.6,14981.6,6.207614674000106
+Green,Yellow,15075.0,0.0,
+Yellow,Green,14432.0,0.0,
+Purple,Yellow,7349.4,0.2,3674599.999999999
+Yellow,Purple,7045.0,0.0,
+Green,Interchange (RV Road),5282.4,5645.6,-6.433328609890898
+Yellow,Interchange (Majestic),5041.8,0.0,
+Interchange (RV Road),Green,4913.8,5311.6,-7.489268770238722
+Interchange (Majestic),Yellow,3057.4,0.0,
+Purple,Interchange (RV Road),2702.0,2936.6,-7.988830620445409
+Interchange (RV Road),Purple,2485.2,2831.2,-12.220966374682119
+Interchange (RV Road),Yellow,2426.6,0.0,
+Yellow,Interchange (RV Road),2363.2,0.0,
+Interchange (RV Road),Interchange (Majestic),814.2,695.4,17.08369283865403
+Interchange (Majestic),Interchange (RV Road),559.2,464.4,20.41343669250648

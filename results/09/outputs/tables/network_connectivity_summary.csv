@@ -1,0 +1,2 @@
+served_stops,routes,route_pairs_sharing_a_stop,network_density,median_routes_per_stop,share_stops_single_route,median_routes_one_transfer,share_stops_within_400m_of_metro,share_stops_within_800m_of_metro,median_stop_to_metro_km
+9309,4130,1534449,0.17996477991552107,6.0,0.19035342142013106,704.0,0.04962939091202063,0.11075303469760447,5.689673652182476

@@ -1,0 +1,34 @@
+snapshot,table,check,rows_affected,action
+2025-08-04,stops,raw rows,9309,-
+2025-08-04,stops,exact duplicate rows,0,none found
+2025-08-04,routes,raw rows,4130,-
+2025-08-04,routes,exact duplicate rows,0,none found
+2025-08-04,trips,raw rows,54342,-
+2025-08-04,trips,exact duplicate rows,0,none found
+2025-08-04,stop_times,raw rows,1454128,-
+2025-08-04,stop_times,exact duplicate rows,0,none found
+2025-08-04,calendar,raw rows,1,-
+2025-08-04,calendar,exact duplicate rows,0,none found
+2025-08-04,stops,missing coordinates,0,none found
+2025-08-04,stops,outside BMTC service area (bad coordinates),0,none found
+2025-08-04,stops,duplicate stop_id,0,none found
+2025-08-04,stops,missing stop_name,0,none found
+2025-08-04,routes,missing route_short_name,0,none found
+2025-08-04,trips,route_id not in routes,0,none found
+2025-08-04,trips,not running on a weekday (Wednesday),0,none found
+2025-08-04,stop_times,missing stop_id or time,0,none found
+2025-08-04,stop_times,stop_id not in cleaned stops,0,none found
+2025-08-04,stop_times,trip_id not in trips,0,none found
+2025-08-04,stop_times,times past midnight (hour 24+),0,none found
+2025-08-04,stop_times,"duplicate (trip_id, stop_sequence)",0,none found
+2025-08-04,trips,only 1-2 stops listed (incomplete stop list in feed),7128,kept in trip counts; excluded from length and stops-per-trip statistics
+2025-08-04,metro entries,raw rows,92280,-
+2025-08-04,metro entries,duplicate station-date-hour,0,none found
+2025-08-04,metro entries,missing values,0,none found
+2025-08-04,metro entries,negative counts,0,none found
+2025-08-04,metro exits,raw rows,95616,-
+2025-08-04,metro exits,duplicate station-date-hour,0,none found
+2025-08-04,metro exits,missing values,0,none found
+2025-08-04,metro exits,negative counts,0,none found
+2025-08-04,metro od,raw rows,1273629,-
+2025-08-04,metro od,origin equals destination (entry and exit at same station),15261,excluded from OD analysis
