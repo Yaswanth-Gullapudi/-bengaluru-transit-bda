@@ -161,7 +161,7 @@ works too, except the forecaster panel, which loads `forecast.json`.
 | `extensions/outputs/` | Pink Line pre-registration (`frozen_pink_stations.json`, `preregistration_pink.md`) and local extension tables |
 | `dashboard/` | Streamlit + Plotly dashboard |
 | `demo/` | Yellow Line Explorer single-page web demo and its data |
-| `docs/` | Project context, research proposals, novelty review, final idea |
+| `docs/` | Full project report (`Project_Report.md`), project context, research proposals, novelty review, final idea |
 | `data_raw/ward/`, `data_raw/opencity_bmrcl/` | OpenCity files that cannot be downloaded automatically |
 
 ## 3. Notebooks
