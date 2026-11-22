@@ -115,7 +115,7 @@ def line_of(lines: str) -> str:
 
 
 PAGES = ["Overview", "How it works", "Line explorer", "Network analytics", "Station explorer", "Yellow Line test", "Headway",
-         "All lines", "Machine learning", "Demand forecaster", "Spark scaling", "Pink Line", "Data & reproducibility"]
+         "All lines", "Machine learning", "Demand forecaster", "Fare revenue", "Spark scaling", "Pink Line", "Data & reproducibility"]
 st.sidebar.markdown("<div class=\"hero\"><div class=\"eyebrow\">BDA project</div><h1 style=\"font-size:1.4rem\">Bengaluru Transit</h1></div>", unsafe_allow_html=True)
 st.sidebar.caption("BMRCL metro + BMTC bus · HDFS + Spark 4 on Kaggle")
 page = st.sidebar.radio("Page", PAGES, key="page")
@@ -147,7 +147,7 @@ if page == "Overview":
     acc = tab("08", "access_summary.csv").iloc[0]
     c[1].metric("People gaining walk access to metro", f"{acc.gained_direct_access / 1e3:,.0f}k")
     c[2].metric("People reaching the Yellow corridor by bus", f"{acc.bus_link_to_yellow_400m / 1e6:.2f} M")
-    c[3].metric("Notebooks run on Kaggle", "13")
+    c[3].metric("Notebooks run on Kaggle", "14")
     st.subheader("Pipeline")
     _fill, _key, _hi, _ink = (P["surface"], P["soft"], "#4a3d10" if _DARK else "#fde9b0", P["ink"])
     st.graphviz_chart(f"""
@@ -544,6 +544,35 @@ elif page == "Demand forecaster":
     c2.plotly_chart(px.bar(sil, x="k", y="silhouette", title="Silhouette by number of groups"), width="stretch")
     st.dataframe(cl[["station", "cluster_name", "am_share", "pm_share"]].round(3), hide_index=True, width="stretch")
 
+# ============================================================================ Fare revenue
+elif page == "Fare revenue":
+    hero("What the opening meant for the fare box",
+         "Fare-box revenue from BMRCL's own fare fields: weekdays before (1-10 Aug) and after (11-18 Aug) the Yellow Line opened, "
+         "and the extra revenue from the 10 Sep headway cut. Revenue is not profit (operating costs are not public) and does not count "
+         "passengers' time savings.", eyebrow="Fare revenue · notebook 12")
+    fs = tab("12", "fare_summary.csv"); fy = tab("12", "fare_yellow.csv").iloc[0]; fh = tab("12", "fare_headway.csv").iloc[0]
+    rev = fs[fs.measure.str.startswith("Fare revenue")].iloc[0]
+    c = st.columns(4)
+    c[0].metric("Fare revenue per weekday, after", f"Rs {rev.after / 1e7:.2f} crore", f"{rev.change_pct:+.1f}% vs before")
+    c[1].metric("From trips using the Yellow Line", f"Rs {fy.revenue_per_weekday / 1e5:.1f} lakh / day", f"{fy.share_of_revenue_pct:.0f}% of revenue", delta_color="off")
+    c[2].metric("Average Yellow trip fare", f"Rs {fy.avg_fare:.1f}")
+    c[3].metric("Headway cut, extra revenue", f"Rs {fh.extra_revenue_per_year_weekdays / 1e7:.1f} crore / yr",
+                f"Rs {fh.extra_revenue_per_weekday / 1e5:.1f} lakh per weekday", delta_color="off")
+    show = fs.copy()
+    st.dataframe(show.round(1), hide_index=True, width="stretch")
+    c1, c2 = st.columns(2)
+    bl = tab("12", "fare_by_line.csv")
+    m = bl.melt("origin_line", ["revenue_before", "revenue_after"], var_name="period", value_name="revenue")
+    m["period"] = m["period"].str.replace("revenue_", "")
+    c1.plotly_chart(px.bar(m, x="origin_line", y="revenue", color="period", barmode="group",
+                           labels={"origin_line": "trips starting on", "revenue": "Rs per weekday"},
+                           title="Fare revenue by origin line"), width="stretch")
+    fr = tab("12", "fare_fares.csv")
+    c2.plotly_chart(px.bar(fr, x=fr["fare"].astype(str), y="trips", labels={"x": "fare (Rs)", "trips": "trips per weekday"},
+                           title="Trips by fare slab, after opening"), width="stretch")
+    st.caption(f"Headway estimate: +{fh.did_entry_effect:.1%} entries (difference-in-differences, notebook 03) x "
+               f"{fh.yellow_weekday_entries_before_cut:,.0f} Yellow weekday entries x Rs {fh.yellow_origin_avg_fare:.1f} average fare, 250 weekdays a year.")
+
 # ============================================================================ Scaling
 elif page == "Spark scaling":
     hero("Spark scaling vs pandas (notebook 06)", eyebrow=page)
@@ -583,8 +612,8 @@ else:
                  "8,778 booths, 10.13 M people", "29 CSV files", "214,585 nodes"]}))
     nbs = pd.DataFrame({"Notebook": ["00 setup and data", "01 bus-link score", "02 diversion test", "03 time of day / headway",
                                      "04 bus supply", "05 / 05b MLlib", "06 scaling", "07 robustness", "08 population",
-                                     "09 network analytics", "10 extensions + all lines", "11 demand forecaster"],
+                                     "09 network analytics", "10 extensions + all lines", "11 demand forecaster", "12 fare revenue"],
                         "Engine": ["HDFS ingest", "pandas + OSMnx", "Spark SQL + pyfixest", "pyfixest", "Spark SQL", "Spark MLlib",
-                                   "Spark vs pandas", "pyfixest", "GeoPandas", "Spark SQL", "Spark MLlib + pyfixest", "Spark MLlib (RF, KMeans)"]})
+                                   "Spark vs pandas", "pyfixest", "GeoPandas", "Spark SQL", "Spark MLlib + pyfixest", "Spark MLlib (RF, KMeans)", "pandas"]})
     st.table(nbs)
     st.caption(f"Results folder: {RES}")

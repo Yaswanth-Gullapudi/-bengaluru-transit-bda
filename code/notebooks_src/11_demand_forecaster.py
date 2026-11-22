@@ -4,7 +4,8 @@
 # give a calibrated 90% range and a crowding warning, and flag unusual hours.
 # * Learn 8-17 Sep 2025, calibrate ranges 18-21 Sep, test once on 22-30 Sep (never seen; includes Navaratri).
 # * Scored against "same hour yesterday" and "same hour last week".
-# * V1 learns the level; V2 learns the change from last week (tested, worse). Final: V1 Random Forest.
+# * V1 learns the level; V2 learns the change from last week (tested, worse); V3 adds hourly weather
+#   (Open-Meteo rain and temperature, used as observed). Final: V1 Random Forest.
 # * What each input group is worth, with 95% ranges from 1,000 bootstrap resamples of test days.
 # * Stations grouped by weekday rhythm with MLlib KMeans (silhouette).
 

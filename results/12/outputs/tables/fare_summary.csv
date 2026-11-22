@@ -1,0 +1,5 @@
+measure,before,after,change_pct
+Trips per weekday,699502.6,796123.8,13.812843583426293
+Fare revenue per weekday (Rs),32658202.0,38260456.0,17.154202181736757
+Average fare (Rs),46.6877492664073,48.05842508413892,2.9358361438893477
+Revenue from trips not using new stations (Rs),32658170.0,33676748.0,3.1189071524828194

@@ -27,7 +27,31 @@ HOLIDAYS = {"2025-09-05"}                     # Eid-e-Milad (Karnataka public ho
 LEARN = (8, 17); CALIB = (18, 21); TEST = (22, 30)
 
 
-def build_table(bus_tot: pd.DataFrame | None = None, pop: pd.Series | None = None) -> pd.DataFrame:
+def load_weather() -> pd.DataFrame:
+    """Hourly Bengaluru rain (mm) and temperature (C), Aug-Sep 2025, from the Open-Meteo archive
+    (downloaded once into data_raw/weather/). Used as observed, i.e. assuming a good next-day weather forecast."""
+    import glob
+    f = D.raw_dir() / "weather" / "bengaluru_hourly_weather_2025-08-09.csv"
+    hits = [f] if f.exists() else [__import__("pathlib").Path(x) for x in
+                                   glob.glob("/kaggle/input/**/weather/bengaluru_hourly_weather_2025-08-09.csv", recursive=True)]
+    if hits:
+        w = pd.read_csv(hits[0])
+    else:
+        import json, urllib.request
+        url = ("https://archive-api.open-meteo.com/v1/archive?latitude=12.97&longitude=77.59&start_date=2025-08-01"
+               "&end_date=2025-09-30&hourly=precipitation,temperature_2m&timezone=Asia%2FKolkata")
+        req = urllib.request.Request(url, headers={"User-Agent": "t15-research-client"})
+        w = pd.DataFrame(json.load(urllib.request.urlopen(req, timeout=60))["hourly"])
+        f.parent.mkdir(parents=True, exist_ok=True); w.to_csv(f, index=False)
+    w["date"] = w["time"].str[:10]; w["hour"] = w["time"].str[11:13].astype(int)
+    w = w.sort_values("time")
+    w["rain_3h"] = w["precipitation"].rolling(3, min_periods=1).sum()
+    w["rain_day"] = w.groupby("date")["precipitation"].transform("sum")
+    return w.rename(columns={"precipitation": "rain_mm", "temperature_2m": "temp_c"})[
+        ["date", "hour", "rain_mm", "rain_3h", "rain_day", "temp_c"]]
+
+
+def build_table(bus_tot: pd.DataFrame | None = None, pop: pd.Series | None = None, weather: bool = True) -> pd.DataFrame:
     e = D.load_station_hourly("entries")
     e = e[e["date"].str.startswith("2025-09") & e["hour"].isin(HOURS)].copy()
     full = pd.MultiIndex.from_product([sorted(e.station.unique()), sorted(e.date.unique()), list(HOURS)],
@@ -53,6 +77,8 @@ def build_table(bus_tot: pd.DataFrame | None = None, pop: pd.Series | None = Non
             x[f"log_{c}"] = np.log1p(x.station.map(bus_tot[c]).fillna(0))
     if pop is not None:
         x["log_pop"] = np.log1p(x.station.map(pop).fillna(0))
+    if weather:
+        x = x.merge(load_weather(), on=["date", "hour"], how="left")
     x["split"] = np.select([x.day.between(*LEARN), x.day.between(*CALIB), x.day.between(*TEST)],
                            ["learn", "calib", "test"], "warmup")
     return x[x.split != "warmup"].reset_index(drop=True)
@@ -61,7 +87,8 @@ def build_table(bus_tot: pd.DataFrame | None = None, pop: pd.Series | None = Non
 GROUPS = {"lags": ["lag1", "lag7", "mean7", "yday_total"],
           "calendar": ["dow_f", "weekend", "holiday"],
           "station": ["lat", "lon", "new_yellow", "log_pop"],
-          "bus": ["log_bus_trips", "log_bus_routes", "log_feeder_trips"]}
+          "bus": ["log_bus_trips", "log_bus_routes", "log_feeder_trips"],
+          "weather": ["rain_mm", "rain_3h", "rain_day", "temp_c"]}
 
 
 def _metrics(y, p):
@@ -99,13 +126,17 @@ def evaluate(spark, tab: pd.DataFrame, n_boot: int = 1000, seed: int = C.SEED) -
     rng = np.random.default_rng(seed)
     test = tab[tab.split == "test"]
     base = {"same hour yesterday": test["lag1"].values, "same hour last week": test["lag7"].values}
-    allf = sum(GROUPS.values(), [])
+    allf = [c for g, cols in GROUPS.items() if g != "weather" for c in cols]       # V1/V2 inputs
+    wx = GROUPS["weather"] if "rain_mm" in tab.columns else []
     # V1 = learn the level (final: V1 Random Forest); V2 = learn the change from last week (tested, worse)
     runs = {"V1 GBT, level": ("gbt", allf, "level"), "V1 Random Forest, level": ("rf", allf, "level"),
             "V2 GBT, change vs last week": ("gbt", allf, "delta"), "V2 Random Forest, change vs last week": ("rf", allf, "delta"),
             "V1 RF without bus network": ("rf", [c for c in allf if c not in GROUPS["bus"]], "level"),
             "V1 RF without station traits": ("rf", [c for c in allf if c not in GROUPS["station"]], "level"),
             "V1 RF without calendar": ("rf", [c for c in allf if c not in GROUPS["calendar"]], "level")}
+    if wx:   # V3: V1 + weather (rain this hour, last 3 hours, whole day; temperature)
+        runs.update({"V3 Random Forest + weather": ("rf", allf + wx, "level"),
+                     "V3 GBT + weather": ("gbt", allf + wx, "level")})
     preds = {k: fit_predict(spark, tab, f, m, target=t) for k, (m, f, t) in runs.items()}
     key = test[["station", "day", "hour"]].reset_index(drop=True)
     P = {k: key.merge(v, on=["station", "day", "hour"])["prediction"].values for k, v in preds.items()}
@@ -136,9 +167,12 @@ def evaluate(spark, tab: pd.DataFrame, n_boot: int = 1000, seed: int = C.SEED) -
         ci.append((k, lo, hi))
     res = res.merge(pd.DataFrame(ci, columns=["method", "skill_ci_low", "skill_ci_high"]), on="method")
     abl = []
-    for grp, k in (("bus network", "V1 RF without bus network"), ("station traits", "V1 RF without station traits"),
-                   ("calendar", "V1 RF without calendar")):
-        main = "V1 Random Forest, level"     # final model (V2 tested and rejected)
+    groups = [("bus network", "V1 RF without bus network", "V1 Random Forest, level"),
+              ("station traits", "V1 RF without station traits", "V1 Random Forest, level"),
+              ("calendar", "V1 RF without calendar", "V1 Random Forest, level")]
+    if wx:   # weather is measured the other way round: V3 (with) against V1 (without)
+        groups.append(("weather", "V1 Random Forest, level", "V3 Random Forest + weather"))
+    for grp, k, main in groups:
         val = (abs_err[k][ok].mean() - abs_err[main][ok].mean()) / abs_err[nb][ok].mean() * 100
         lo, hi = boot(lambda i, k=k: (abs_err[k][i].mean() - abs_err[main][i].mean()) / abs_err[nb][i].mean() * 100)
         abl.append({"input group": grp, "skill points added": val, "ci_low": lo, "ci_high": hi,

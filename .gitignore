@@ -6,6 +6,7 @@ kaggle.json
 data_raw/*
 !data_raw/ward/
 !data_raw/opencity_bmrcl/
+!data_raw/weather/
 outputs/cache/
 code/cache/
 *.graphml
